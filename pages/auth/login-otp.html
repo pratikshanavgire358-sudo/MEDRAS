@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+          content="MEDRA Smart Emergency Response - OTP Verification">
+
+    <meta name="theme-color" content="#06b878">
+
+    <title>MEDRA | Verify Login</title>
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="../../css/style.css">
+
+    <!-- Authentication CSS -->
+    <link rel="stylesheet" href="../../css/auth.css">
+<link rel="stylesheet" href="../../css/auth.css">
+<link rel="stylesheet" href="../../css/responsive.css">
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="top">
+
+        <div class="brand">
+
+            <div class="logo">+</div>
+
+            <div>
+                <b>MEDRA</b>
+                <small>Smart Emergency Response</small>
+            </div>
+
+        </div>
+
+        <div class="nav">
+            <a href="../index.html">Home</a>
+        </div>
+
+    </header>
+
+
+    <!-- OTP Section -->
+    <main class="center">
+
+        <section class="auth">
+
+            <div class="back">
+                <button
+                    type="button"
+                    class="btn ghost"
+                    onclick="goBack()">
+                    ← Back
+                </button>
+            </div>
+
+
+            <div class="auth-header">
+
+                <div class="auth-icon">
+                    🔐
+                </div>
+
+                <h1>Verify Your Login</h1>
+
+                <p>
+                    We have sent a verification OTP to your
+                    registered contact number or email.
+                </p>
+
+            </div>
+
+
+            <!-- Selected role -->
+            <div class="card otp-role-card">
+
+                <span class="hint">LOGIN AS</span>
+
+                <h3 id="loginRole">
+                    User
+                </h3>
+
+                <p id="loginIdentifier">
+                    Verification required
+                </p>
+
+            </div>
+
+
+            <!-- OTP Form -->
+            <form id="loginOtpForm">
+
+                <div class="field">
+
+                    <label for="otp">
+                        Enter 6-Digit OTP
+                    </label>
+
+                    <input
+                        type="text"
+                        id="otp"
+                        name="otp"
+                        maxlength="6"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        placeholder="Enter OTP"
+                        required>
+
+                    <div class="hint">
+                        Enter the 6-digit verification code.
+                    </div>
+
+                    <div
+                        id="otpError"
+                        class="error">
+                    </div>
+
+                </div>
+
+
+                <!-- Demo OTP notice -->
+                <div class="otp-demo">
+
+                    <strong>Demo Mode</strong>
+
+                    <p>
+                        During frontend development, the OTP is
+                        simulated locally.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="btn full">
+                    Verify & Continue
+                </button>
+
+            </form>
+
+
+            <!-- Resend -->
+            <div class="otp-footer">
+
+                <p id="timerText">
+                    Didn't receive the OTP?
+                </p>
+
+                <button
+                    type="button"
+                    id="resendOtpBtn"
+                    class="btn ghost"
+                    onclick="resendLoginOtp()">
+                    Resend OTP
+                </button>
+
+            </div>
+
+
+            <div
+                id="otpSuccess"
+                class="ok">
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- JavaScript -->
+    <script src="../../js/common.js"></script>
+    <script src="../../js/auth/login-otp.js"></script>
+
+</body>
+</html>

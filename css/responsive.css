@@ -1,0 +1,463 @@
+/* ==========================================
+   MEDRA - RESPONSIVE CSS
+   Mobile | Tablet | Laptop | Desktop
+========================================== */
+
+
+/* ==========================================
+   LARGE DESKTOP
+========================================== */
+
+@media (min-width: 1400px) {
+
+    .wrap {
+        max-width: 1500px;
+    }
+
+    .main {
+        padding: 28px;
+    }
+
+}
+
+
+/* ==========================================
+   LAPTOP / SMALL DESKTOP
+========================================== */
+
+@media (max-width: 1200px) {
+
+    /* Dashboard */
+
+    .app {
+        grid-template-columns: 220px 1fr;
+    }
+
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dash {
+        grid-template-columns: 1fr;
+    }
+
+    .resource-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .vitals-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
+
+/* ==========================================
+   TABLET
+========================================== */
+
+@media (max-width: 950px) {
+
+    /* Landing page */
+
+    .hero {
+        grid-template-columns: 1fr;
+    }
+
+    .featureGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .infoGrid {
+        grid-template-columns: 1fr;
+    }
+
+
+    /* Dashboard */
+
+    .app {
+        grid-template-columns: 1fr;
+    }
+
+    .side {
+        position: relative;
+
+        width: 100%;
+        height: auto;
+
+        padding: 12px 15px;
+    }
+
+    .side .brand {
+        margin-bottom: 12px;
+    }
+
+    .menu {
+        display: grid;
+
+        grid-template-columns:
+            repeat(3, 1fr);
+
+        gap: 5px;
+    }
+
+    .menu button {
+        text-align: center;
+
+        padding: 9px 6px;
+
+        font-size: 11px;
+    }
+
+    .main {
+        padding: 18px;
+    }
+
+}
+
+
+/* ==========================================
+   SMALL TABLET
+========================================== */
+
+@media (max-width: 800px) {
+
+    /* Header */
+
+    .top {
+        padding: 0 18px;
+    }
+
+    .nav {
+        gap: 8px;
+    }
+
+    .nav a {
+        display: none;
+    }
+
+
+    /* Dashboard */
+
+    .menu {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .appbar {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+    .stats {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .camgrid {
+        grid-template-columns: 1fr;
+    }
+
+    .resource-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .junctions {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+}
+
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width: 600px) {
+
+    body {
+        font-size: 13px;
+    }
+
+
+    /* --------------------------------------
+       HEADER
+    -------------------------------------- */
+
+    .top {
+        height: 62px;
+
+        padding: 0 12px;
+    }
+
+    .brand {
+        gap: 6px;
+    }
+
+    .brand b {
+        font-size: 19px;
+    }
+
+    .brand small {
+        font-size: 9px;
+    }
+
+    .logo {
+        font-size: 30px;
+    }
+
+
+    /* --------------------------------------
+       BUTTONS
+    -------------------------------------- */
+
+    .btn {
+        padding: 9px 12px;
+
+        font-size: 12px;
+    }
+
+
+    /* --------------------------------------
+       LANDING PAGE
+    -------------------------------------- */
+
+    .wrap {
+        padding: 16px;
+    }
+
+    .hero {
+        min-height: auto;
+    }
+
+    .hero h1 {
+        font-size: 36px;
+
+        line-height: 1.1;
+    }
+
+    .hero p {
+        font-size: 14px;
+    }
+
+    .heroVisual {
+        height: 280px;
+    }
+
+    .heroBtns {
+        flex-direction: column;
+    }
+
+    .heroBtns .btn {
+        width: 100%;
+
+        text-align: center;
+    }
+
+    .featureGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+
+    /* --------------------------------------
+       DASHBOARD
+    -------------------------------------- */
+
+    .main {
+        padding: 13px;
+    }
+
+    .side {
+        padding: 10px;
+    }
+
+    .side .brand {
+        display: none;
+    }
+
+    .menu button {
+        font-size: 10px;
+
+        padding: 8px 5px;
+    }
+
+    .stats {
+        grid-template-columns:
+            1fr 1fr;
+
+        gap: 8px;
+    }
+
+    .stat {
+        padding: 12px;
+    }
+
+    .stat strong {
+        font-size: 22px;
+    }
+
+    .dash {
+        grid-template-columns: 1fr;
+    }
+
+    .map {
+        height: 260px;
+    }
+
+    .dashboard-card {
+        padding: 15px;
+    }
+
+
+    /* --------------------------------------
+       VITALS
+    -------------------------------------- */
+
+    .vitals-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+
+    /* --------------------------------------
+       JUNCTIONS
+    -------------------------------------- */
+
+    .junctions {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+
+    /* --------------------------------------
+       CAMERA
+    -------------------------------------- */
+
+    .camgrid {
+        grid-template-columns: 1fr;
+    }
+
+
+    /* --------------------------------------
+       TABLE
+    -------------------------------------- */
+
+    .table-wrapper {
+        width: 100%;
+
+        overflow-x: auto;
+    }
+
+    .table {
+        min-width: 600px;
+    }
+
+
+    /* --------------------------------------
+       FOOTER
+    -------------------------------------- */
+
+    .dashboard-footer {
+        flex-direction: column;
+
+        gap: 8px;
+    }
+
+}
+
+
+/* ==========================================
+   SMALL MOBILE
+========================================== */
+
+@media (max-width: 450px) {
+
+    /* Authentication */
+
+    .auth {
+        width: 100%;
+
+        padding: 18px;
+    }
+
+    .auth-page {
+        padding: 20px 12px;
+    }
+
+
+    /* Landing */
+
+    .hero h1 {
+        font-size: 31px;
+    }
+
+    .heroVisual {
+        height: 240px;
+    }
+
+    .featureGrid {
+        grid-template-columns: 1fr;
+    }
+
+
+    /* Dashboard */
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .vitals-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .menu {
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+    .junctions {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+
+/* ==========================================
+   VERY SMALL MOBILE
+========================================== */
+
+@media (max-width: 350px) {
+
+    .top {
+        padding: 0 8px;
+    }
+
+    .brand b {
+        font-size: 17px;
+    }
+
+    .logo {
+        font-size: 26px;
+    }
+
+    .main {
+        padding: 9px;
+    }
+
+    .menu button {
+        font-size: 9px;
+
+        padding: 7px 3px;
+    }
+
+    .hero h1 {
+        font-size: 27px;
+    }
+
+}

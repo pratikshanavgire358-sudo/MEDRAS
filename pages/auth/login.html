@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MedRA — Login</title>
+
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/auth.css">
+    <link rel="stylesheet" href="../../css/responsive.css">
+</head>
+
+<body>
+
+    <main class="center">
+
+        <section class="auth">
+
+            <!-- Top bar -->
+            <div class="appbar">
+
+                <button
+                    type="button"
+                    class="btn ghost"
+                    onclick="go('home')">
+                    ← Back
+                </button>
+
+                <button
+                    type="button"
+                    class="theme"
+                    onclick="toggleTheme()">
+                    ☾ Dark
+                </button>
+
+            </div>
+
+            <h1 style="text-align:center">
+                Login to Your Account
+            </h1>
+
+            <p style="text-align:center; color:var(--muted)">
+                Select your login type to continue
+            </p>
+
+            <!-- Login roles -->
+            <div class="roles">
+
+                <!-- Patient / Family -->
+                <div class="role">
+
+                    <div class="big">👤</div>
+
+                    <h3>User</h3>
+
+                    <p>Patient / Family Member</p>
+
+                    <button
+    type="button"
+    class="btn"
+    onclick="window.location.href='patient-login.html'">
+    Continue →
+</button>
+                </div>
+
+                <!-- Ambulance -->
+                <div class="role">
+
+                    <div class="big">🚑</div>
+
+                    <h3>Ambulance</h3>
+
+                    <p>EV Doctor / EC Driver</p>
+
+                    <button
+                        type="button"
+                        class="btn"
+                        onclick="go('ambselect', 'Ambulance')">
+                        Continue →
+                    </button>
+
+                </div>
+
+                <!-- Hospital -->
+                <div class="role">
+
+                    <div class="big">🏥</div>
+
+                    <h3>Hospital</h3>
+
+                    <p>Registration / Staff / Admin</p>
+
+                    <button
+                        type="button"
+                        class="btn"
+                        onclick="go('hospselect', 'Hospital')">
+                        Continue →
+                    </button>
+
+                </div>
+
+                <!-- System Admin -->
+                <div class="role">
+
+                    <div class="big">⚙️</div>
+
+                    <h3>System Admin</h3>
+
+                    <p>Full Access</p>
+
+                    <button
+                        type="button"
+                        class="btn"
+                        onclick="go('adminlogin', 'System Admin')">
+                        Continue →
+                    </button>
+
+                </div>
+
+                <!-- Traffic Control -->
+                <div class="role">
+
+                    <div class="big">🚦</div>
+
+                    <h3>City Traffic Control Room</h3>
+
+                    <p>Traffic Management</p>
+
+                    <button
+                        type="button"
+                        class="btn"
+                        onclick="go('traffic', 'City Traffic Control Room')">
+                        Continue →
+                    </button>
+
+                </div>
+
+            </div>
+
+            <!-- Registration -->
+            <p style="
+                text-align:center;
+                color:var(--muted);
+                margin-top:20px;
+            ">
+
+                New to MedRA?
+
+                <a
+                    href="#"
+                    onclick="go('register'); return false;"
+                    class="green">
+                    Create an account
+                </a>
+
+            </p>
+
+        </section>
+
+    </main>
+
+    <script src="../../js/common.js"></script>
+    <script src="../../js/navigation.js"></script>
+    <script src="../../js/auth/login.js"></script>
+
+</body>
+</html>

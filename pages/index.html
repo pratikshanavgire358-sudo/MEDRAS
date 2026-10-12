@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="
+        default-src 'self';
+        style-src 'self' 'unsafe-inline' https://unpkg.com;
+        script-src 'self' 'unsafe-inline' https://unpkg.com;
+        img-src 'self' data: https:;
+        connect-src 'self';
+        font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com;
+        "
+    >
+
+    <title>MedRA | Smart Emergency Response</title>
+
+    <!-- Main MedRA CSS -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <!-- Authentication / Home CSS -->
+    <link rel="stylesheet" href="../css/auth.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+
+</head>
+
+<body>
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <header class="topbar">
+
+        <div class="brand">
+
+            <div class="logo">
+                +
+            </div>
+
+            <div>
+                <strong>MedRA</strong>
+                <small>Smart Emergency Response</small>
+            </div>
+
+        </div>
+
+
+        <div class="top-actions">
+
+            <button
+                class="theme"
+                id="themeButton"
+                type="button"
+            >
+                ☀️
+            </button>
+
+            <button
+                class="btn ghost"
+                type="button"
+                onclick="goToLogin()"
+            >
+                Login
+            </button>
+
+            <button
+                class="btn"
+                type="button"
+                onclick="goToSignup()"
+            >
+                Get Started
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         HOME
+    ====================================================== -->
+
+    <main>
+
+        <!-- HERO -->
+
+        <section class="hero">
+
+            <div class="hero-content">
+
+                <div class="hero-badge">
+                    🚑 Smart Emergency Response
+                </div>
+
+                <h1>
+                    Faster Response.
+                    <span>Safer Roads.</span>
+                    Better Healthcare.
+                </h1>
+
+                <p>
+                    MedRA connects patients, ambulances,
+                    hospitals and emergency services through
+                    one intelligent emergency response system.
+                </p>
+
+
+                <div class="hero-buttons">
+
+                    <button
+                        class="btn hero-btn"
+                        onclick="goToSignup()"
+                    >
+                        Get Started →
+                    </button>
+
+                    <button
+                        class="btn ghost hero-btn"
+                        onclick="showHowItWorks()"
+                    >
+                        ▶ Watch How It Works
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- Emergency visual -->
+
+            <div class="hero-visual">
+
+                <div class="emergency-card">
+
+                    <div class="emergency-icon">
+                        🚑
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Emergency Response
+                        </strong>
+
+                        <span>
+                            Connected & Active
+                        </span>
+
+                    </div>
+
+                    <div class="status-dot"></div>
+
+                </div>
+
+
+                <div class="route-line"></div>
+
+
+                <div class="hero-network">
+
+                    <div class="network-node">
+                        👤
+                        <span>Patient</span>
+                    </div>
+
+                    <div class="network-node">
+                        🚑
+                        <span>Ambulance</span>
+                    </div>
+
+                    <div class="network-node">
+                        🏥
+                        <span>Hospital</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             FEATURES
+        ================================================== -->
+
+        <section class="section">
+
+            <div class="section-heading">
+
+                <span class="section-label">
+                    WHY MEDRA
+                </span>
+
+                <h2>
+                    One Connected Emergency Ecosystem
+                </h2>
+
+                <p>
+                    Bringing emergency response teams,
+                    healthcare providers and patients
+                    together in real time.
+                </p>
+
+            </div>
+
+
+            <div class="feature-grid">
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        🚨
+                    </div>
+
+                    <h3>
+                        Emergency SOS
+                    </h3>
+
+                    <p>
+                        Quickly trigger an emergency
+                        response and share essential
+                        information.
+                    </p>
+
+                </div>
+
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        🚑
+                    </div>
+
+                    <h3>
+                        Smart Ambulance
+                    </h3>
+
+                    <p>
+                        Connect ambulances with live
+                        location, patient information
+                        and emergency routing.
+                    </p>
+
+                </div>
+
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        🏥
+                    </div>
+
+                    <h3>
+                        Hospital Coordination
+                    </h3>
+
+                    <p>
+                        Help hospitals prepare resources
+                        before the patient arrives.
+                    </p>
+
+                </div>
+
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        📡
+                    </div>
+
+                    <h3>
+                        Live Monitoring
+                    </h3>
+
+                    <p>
+                        Monitor emergency vehicles,
+                        vitals and system events in
+                        real time.
+                    </p>
+
+                </div>
+
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        🚦
+                    </div>
+
+                    <h3>
+                        Green Corridor
+                    </h3>
+
+                    <p>
+                        Coordinate traffic signals to
+                        support faster emergency
+                        transportation.
+                    </p>
+
+                </div>
+
+
+                <div class="feature-card">
+
+                    <div class="feature-icon">
+                        🔐
+                    </div>
+
+                    <h3>
+                        Secure Healthcare
+                    </h3>
+
+                    <p>
+                        Role-based access, consent and
+                        audit capabilities protect
+                        sensitive information.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             HOW IT WORKS
+        ================================================== -->
+
+        <section
+            class="section how-section"
+            id="howItWorks"
+        >
+
+            <div class="section-heading">
+
+                <span class="section-label">
+                    HOW IT WORKS
+                </span>
+
+                <h2>
+                    From Emergency to Care
+                </h2>
+
+            </div>
+
+
+            <div class="steps">
+
+                <div class="step">
+
+                    <div class="step-number">
+                        01
+                    </div>
+
+                    <h3>
+                        Emergency Created
+                    </h3>
+
+                    <p>
+                        Patient or authorized user
+                        initiates an emergency request.
+                    </p>
+
+                </div>
+
+
+                <div class="step">
+
+                    <div class="step-number">
+                        02
+                    </div>
+
+                    <h3>
+                        Ambulance Assigned
+                    </h3>
+
+                    <p>
+                        An available ambulance receives
+                        the emergency request.
+                    </p>
+
+                </div>
+
+
+                <div class="step">
+
+                    <div class="step-number">
+                        03
+                    </div>
+
+                    <h3>
+                        Hospital Prepared
+                    </h3>
+
+                    <p>
+                        Hospital resources can be
+                        prepared before arrival.
+                    </p>
+
+                </div>
+
+
+                <div class="step">
+
+                    <div class="step-number">
+                        04
+                    </div>
+
+                    <h3>
+                        Patient Arrives
+                    </h3>
+
+                    <p>
+                        Emergency teams coordinate the
+                        patient's arrival and treatment.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             WHO CAN USE
+        ================================================== -->
+
+        <section class="section">
+
+            <div class="section-heading">
+
+                <span class="section-label">
+                    MEDRA USERS
+                </span>
+
+                <h2>
+                    One Platform. Multiple Roles.
+                </h2>
+
+            </div>
+
+
+            <div class="role-grid">
+
+                <div class="role-card">
+
+                    <div class="role-icon">
+                        👤
+                    </div>
+
+                    <h3>
+                        Patient / User
+                    </h3>
+
+                    <p>
+                        Emergency SOS, profile,
+                        medical history and family.
+                    </p>
+
+                </div>
+
+
+                <div class="role-card">
+
+                    <div class="role-icon">
+                        🚑
+                    </div>
+
+                    <h3>
+                        Ambulance
+                    </h3>
+
+                    <p>
+                        Driver Mode, EV Doctor Mode,
+                        patient vitals and routing.
+                    </p>
+
+                </div>
+
+
+                <div class="role-card">
+
+                    <div class="role-icon">
+                        🏥
+                    </div>
+
+                    <h3>
+                        Hospital
+                    </h3>
+
+                    <p>
+                        Patient queue, resources,
+                        ER staff and emergency
+                        preparation.
+                    </p>
+
+                </div>
+
+
+                <div class="role-card">
+
+                    <div class="role-icon">
+                        🛡️
+                    </div>
+
+                    <h3>
+                        Master Admin
+                    </h3>
+
+                    <p>
+                        System monitoring, users,
+                        emergency management and
+                        security audit.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             SECURITY
+        ================================================== -->
+
+        <section class="security-section">
+
+            <div>
+
+                <span class="section-label">
+                    PRIVACY & SECURITY
+                </span>
+
+                <h2>
+                    Designed for Sensitive
+                    Emergency Information
+                </h2>
+
+                <p>
+                    MedRA is designed around role-based
+                    access, authentication, consent,
+                    secure communication and auditability.
+                </p>
+
+            </div>
+
+
+            <div class="security-items">
+
+                <div>
+                    🔐
+                    <strong>RBAC</strong>
+                    <span>Role-based access</span>
+                </div>
+
+                <div>
+                    📝
+                    <strong>Audit Logs</strong>
+                    <span>Track important actions</span>
+                </div>
+
+                <div>
+                    🔒
+                    <strong>Secure APIs</strong>
+                    <span>Backend-controlled access</span>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
+
+    <footer class="footer">
+
+        <div class="brand">
+
+            <div class="logo">
+                +
+            </div>
+
+            <div>
+                <strong>MedRA</strong>
+                <small>
+                    Smart Emergency Response
+                </small>
+            </div>
+
+        </div>
+
+        <p>
+            © 2026 MedRA. Smart Emergency Response System.
+        </p>
+
+    </footer>
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script src="../js/common.js"></script>
+    <script src="../js/navigation.js"></script>
+
+</body>
+</html>

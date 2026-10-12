@@ -1,0 +1,20 @@
+# Python virtual environments
+.venv/
+venv/
+backend/.venv/
+backend/venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Secret environment files
+.env
+.env.*
+!.env.example
+
+# VS Code
+.vscode/
+
+# Log files
+*.log

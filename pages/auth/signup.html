@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+          content="MEDRA Smart Emergency Response System">
+
+    <title>MEDRA | Create Account</title>
+
+    <!-- Main CSS -->
+    <link rel="stylesheet"
+          href="../../css/style.css">
+
+    <!-- Authentication CSS -->
+    <link rel="stylesheet"
+          href="../../css/auth.css">
+
+    <!-- Responsive CSS -->
+    <link rel="stylesheet"
+          href="../../css/responsive.css">
+
+</head>
+
+
+<body>
+
+
+<!-- ==========================================
+     HEADER
+========================================== -->
+
+<header class="top">
+
+    <div class="brand">
+
+        <div class="logo">✚</div>
+
+        <div>
+            <b>MEDRA</b>
+
+            <small>
+                Smart Emergency Response
+            </small>
+        </div>
+
+    </div>
+
+
+    <div class="nav">
+
+        <a href="../index.html">
+            Home
+        </a>
+
+        <a href="login.html">
+            Login
+        </a>
+
+        <button
+            class="theme"
+            type="button"
+            onclick="toggleTheme()">
+
+            ☀️ / 🌙
+
+        </button>
+
+    </div>
+
+</header>
+
+
+
+<!-- ==========================================
+     SIGNUP PAGE
+========================================== -->
+
+<main class="center">
+
+
+    <section class="auth">
+
+
+        <!-- Header -->
+
+        <div class="auth-header">
+
+            <div class="auth-icon">
+                ✚
+            </div>
+
+            <h1>
+                Create Your Account
+            </h1>
+
+            <p>
+                Join MEDRA Smart Emergency Response System
+            </p>
+
+        </div>
+
+
+
+        <!-- ======================================
+             ERROR MESSAGE
+        ======================================= -->
+
+        <div
+            id="signupError"
+            class="error"
+            style="display:none;">
+        </div>
+
+
+
+        <!-- ======================================
+             SUCCESS MESSAGE
+        ======================================= -->
+
+        <div
+            id="signupSuccess"
+            class="ok"
+            style="display:none;">
+        </div>
+
+
+
+        <!-- ======================================
+             FORM
+        ======================================= -->
+
+        <form
+            id="signupForm"
+            onsubmit="event.preventDefault(); validateRegistration();">
+
+
+            <!-- ----------------------------------
+                 PERSONAL INFORMATION
+            ----------------------------------- -->
+
+            <h3>
+                Personal Information
+            </h3>
+
+
+            <div class="grid2">
+
+
+                <!-- Full Name -->
+
+                <div class="field">
+
+                    <label for="fullName">
+                        Full Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="fullName"
+                        name="fullName"
+                        placeholder="Enter your full name"
+                        autocomplete="name">
+
+                </div>
+
+
+
+                <!-- Email -->
+
+                <div class="field">
+
+                    <label for="email">
+                        Email Address
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        autocomplete="email">
+
+                </div>
+
+
+
+                <!-- Mobile -->
+
+                <div class="field">
+
+                    <label for="mobile">
+                        Mobile Number
+                    </label>
+
+                    <input
+                        type="tel"
+                        id="mobile"
+                        name="mobile"
+                        placeholder="10-digit mobile number"
+                        maxlength="10"
+                        autocomplete="tel">
+
+                    <div class="hint">
+                        Enter a valid 10-digit Indian mobile number.
+                    </div>
+
+                </div>
+
+
+
+                <!-- Role -->
+
+                <div class="field">
+
+                    <label for="role">
+                        Account Type
+                    </label>
+
+                    <select
+                        id="role"
+                        name="role">
+
+                        <option value="">
+                            Select account type
+                        </option>
+
+                        <option value="patient">
+                            Patient
+                        </option>
+
+                        <option value="family">
+                            Family Member
+                        </option>
+
+                        <option value="vehicle">
+                            Vehicle User
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ----------------------------------
+                 PASSWORD
+            ----------------------------------- -->
+
+            <h3 class="sectionTitle">
+                Account Security
+            </h3>
+
+
+            <div class="grid2">
+
+
+                <!-- Password -->
+
+                <div class="field">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Create a password"
+                        autocomplete="new-password">
+
+                    <div class="hint">
+                        Minimum 8 characters.
+                    </div>
+
+                </div>
+
+
+
+                <!-- Confirm Password -->
+
+                <div class="field">
+
+                    <label for="confirmPassword">
+                        Confirm Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder="Re-enter password"
+                        autocomplete="new-password">
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ----------------------------------
+                 TERMS
+            ----------------------------------- -->
+
+            <label class="check">
+
+                <input
+                    type="checkbox"
+                    id="terms"
+                    name="terms">
+
+                <span>
+                    I agree to the MEDRA
+                    Terms & Conditions and
+                    Privacy Policy.
+                </span>
+
+            </label>
+
+
+
+            <!-- ----------------------------------
+                 SECURITY NOTICE
+            ----------------------------------- -->
+
+            <div class="security-notice">
+
+                <strong>
+                    🔒 Security Notice
+                </strong>
+
+                <p>
+                    Your account information is protected
+                    using secure authentication.
+                    Never share your password or OTP
+                    with anyone.
+                </p>
+
+            </div>
+
+
+
+            <!-- ----------------------------------
+                 CREATE ACCOUNT BUTTON
+            ----------------------------------- -->
+
+            <button
+                type="submit"
+                id="signupButton"
+                class="btn full">
+
+                Create Account
+
+            </button>
+
+
+        </form>
+
+
+
+        <!-- ======================================
+             LOGIN LINK
+        ======================================= -->
+
+        <div class="auth-switch">
+
+            Already have an account?
+
+            <a href="login.html">
+                Login here
+            </a>
+
+        </div>
+
+
+    </section>
+
+</main>
+
+
+
+<!-- ==========================================
+     JAVASCRIPT
+========================================== -->
+
+<script src="../../js/common.js"></script>
+
+<script src="../../js/auth/signup.js"></script>
+
+
+</body>
+
+</html>

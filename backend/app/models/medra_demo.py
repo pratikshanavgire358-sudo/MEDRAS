@@ -1,0 +1,145 @@
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    ForeignKey,
+    Float,
+    Text,
+    Boolean,
+    func,
+)
+from app.core.database import Base
+
+
+class DemoMedicalRecord(Base):
+    __tablename__ = "demo_medical_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+
+    record_type = Column(String(50), nullable=False)
+    provider_name = Column(String(150), nullable=False)
+    record_date = Column(DateTime(timezone=True), nullable=True)
+    summary = Column(Text, nullable=True)
+
+    data_source = Column(
+        String(30),
+        nullable=False,
+        default="MOCK_DATA",
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
+class Emergency(Base):
+    __tablename__ = "emergencies"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+
+    emergency_type = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+
+    status = Column(
+        String(30),
+        nullable=False,
+        default="REQUESTED",
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
+class Ambulance(Base):
+    __tablename__ = "ambulances"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    vehicle_number = Column(
+        String(30),
+        unique=True,
+        nullable=False,
+    )
+
+    driver_name = Column(String(100), nullable=False)
+
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+
+    status = Column(
+        String(30),
+        nullable=False,
+        default="AVAILABLE",
+    )
+
+
+class Hospital(Base):
+    __tablename__ = "hospitals"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    name = Column(String(150), nullable=False)
+    address = Column(String(300), nullable=False)
+
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+
+    emergency_available = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+    )
+
+
+class EmergencyAssignment(Base):
+    __tablename__ = "emergency_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    emergency_id = Column(
+        Integer,
+        ForeignKey("emergencies.id"),
+        nullable=False,
+        unique=True,
+    )
+
+    ambulance_id = Column(
+        Integer,
+        ForeignKey("ambulances.id"),
+        nullable=False,
+    )
+
+    hospital_id = Column(
+        Integer,
+        ForeignKey("hospitals.id"),
+        nullable=False,
+    )
+
+    assigned_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )

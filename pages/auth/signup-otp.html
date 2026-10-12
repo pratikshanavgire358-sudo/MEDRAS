@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MedRA — Verify Mobile</title>
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="../../css/style.css">
+
+    <!-- Authentication CSS -->
+    <link rel="stylesheet" href="../../css/auth.css">
+
+    <!-- Responsive CSS -->
+    <link rel="stylesheet" href="../../css/responsive.css">
+</head>
+
+<body>
+
+<div class="center">
+
+    <div class="auth"
+         style="max-width:560px;text-align:center">
+
+        <!-- Back Button -->
+        <button
+            type="button"
+            class="btn ghost"
+            onclick="go('register')">
+            ← Back to Account Details
+        </button>
+
+
+        <!-- Theme Button -->
+        <button
+            type="button"
+            class="theme"
+            onclick="toggleTheme()">
+            ☾ Dark
+        </button>
+
+
+        <!-- Icon -->
+        <div style="font-size:58px;margin-top:20px">
+            📱
+        </div>
+
+
+        <!-- Heading -->
+        <h1>Verify Your Mobile Number</h1>
+
+
+        <p style="color:var(--muted)">
+            An OTP has been sent to
+            <b id="phoneDisplay"></b>.
+        </p>
+
+
+        <!-- Demo Information -->
+        <p class="hint">
+            For this browser prototype, the simulated OTP is
+            <b>123456</b>.
+            In the production version this step will be connected
+            to an SMS gateway such as Twilio/MSG91.
+        </p>
+
+
+        <!-- OTP Field -->
+        <div
+            class="field"
+            style="text-align:left">
+
+            <label for="regotp">
+                6-Digit OTP *
+            </label>
+
+            <input
+                type="text"
+                id="regotp"
+                maxlength="6"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                placeholder="Enter OTP"
+                oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)"
+            >
+
+        </div>
+
+
+        <!-- Error / Success Message -->
+        <p
+            id="otperr"
+            class="error">
+        </p>
+
+
+        <!-- Verify Button -->
+        <button
+            type="button"
+            id="verifyOtpButton"
+            class="btn full"
+            onclick="verifyRegistrationOtp()">
+
+            Verify &amp; Create Account
+
+        </button>
+
+
+        <!-- Resend Button -->
+        <button
+            type="button"
+            id="resendOtpButton"
+            class="btn ghost full"
+            style="margin-top:8px"
+            onclick="resendRegisterOtp()">
+
+            Resend OTP
+
+        </button>
+
+
+        <!-- User Information -->
+        <p
+            id="signupUserInfo"
+            class="hint"
+            style="margin-top:15px">
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- Common JavaScript -->
+<script src="../../js/common.js"></script>
+
+<!-- Navigation JavaScript -->
+<script src="../../js/navigation.js"></script>
+
+<!-- Signup OTP JavaScript -->
+<script src="../../js/auth/signup-otp.js"></script>
+
+</body>
+
+</html>

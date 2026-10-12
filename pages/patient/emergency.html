@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>MEDRA | Emergency SOS</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet"
+          href="../../css/style.css">
+
+    <link rel="stylesheet"
+          href="../../css/dashboard.css">
+
+    <link rel="stylesheet"
+          href="../../css/patient.css">
+
+    <link rel="stylesheet"
+          href="../../css/responsive.css">
+
+</head>
+
+
+<body>
+
+
+<div class="patient-app">
+
+
+    <!-- SIDEBAR -->
+
+    <aside class="patient-sidebar">
+
+        <div class="sidebar-brand">
+
+            <div class="brand-symbol">
+                <i class="bi bi-heart-pulse-fill"></i>
+            </div>
+
+            <div>
+
+                <h3>MEDRA</h3>
+
+                <span>
+                    Smart Emergency Response
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="sidebar-user">
+
+            <div class="user-avatar"
+                 id="sidebarAvatar">
+                P
+            </div>
+
+            <div>
+
+                <strong id="sidebarUserName">
+                    Patient
+                </strong>
+
+                <small>
+                    Patient Account
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <nav class="patient-menu">
+
+            <p class="menu-title">MAIN</p>
+
+            <a href="dashboard.html"
+               class="menu-item">
+
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+
+            </a>
+
+
+            <a href="emergency.html"
+               class="menu-item active">
+
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Emergency SOS</span>
+
+            </a>
+
+
+            <a href="ambulance.html"
+               class="menu-item">
+
+                <i class="bi bi-truck-front-fill"></i>
+                <span>Ambulance</span>
+
+            </a>
+
+
+            <a href="hospitals.html"
+               class="menu-item">
+
+                <i class="bi bi-hospital-fill"></i>
+                <span>Hospitals</span>
+
+            </a>
+
+
+            <a href="vitals.html"
+               class="menu-item">
+
+                <i class="bi bi-heart-pulse-fill"></i>
+                <span>My Vitals</span>
+
+            </a>
+
+
+            <p class="menu-title">HEALTH</p>
+
+
+            <a href="medical-history.html"
+               class="menu-item">
+
+                <i class="bi bi-file-medical-fill"></i>
+                <span>Medical History</span>
+
+            </a>
+
+
+            <a href="family.html"
+               class="menu-item">
+
+                <i class="bi bi-people-fill"></i>
+                <span>Family Members</span>
+
+            </a>
+
+
+            <a href="notifications.html"
+               class="menu-item">
+
+                <i class="bi bi-bell-fill"></i>
+                <span>Notifications</span>
+
+            </a>
+
+
+            <p class="menu-title">ACCOUNT</p>
+
+
+            <a href="profile.html"
+               class="menu-item">
+
+                <i class="bi bi-person-fill"></i>
+                <span>My Profile</span>
+
+            </a>
+
+
+            <a href="settings.html"
+               class="menu-item">
+
+                <i class="bi bi-gear-fill"></i>
+                <span>Settings</span>
+
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="connection-status">
+
+                <span class="status-dot"></span>
+
+                <div>
+
+                    <strong>
+                        System Online
+                    </strong>
+
+                    <small>
+                        MEDRA services connected
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <button class="logout-btn"
+                    onclick="logoutPatient()">
+
+                <i class="bi bi-box-arrow-right"></i>
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- MAIN -->
+
+    <main class="patient-main">
+
+
+        <!-- TOPBAR -->
+
+        <header class="patient-topbar">
+
+            <div class="topbar-left">
+
+                <div>
+
+                    <h1>
+                        Emergency SOS
+                    </h1>
+
+                    <p>
+                        Request immediate emergency assistance
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="topbar-right">
+
+                <div class="live-status">
+
+                    <span class="live-dot"></span>
+
+                    Live
+
+                </div>
+
+
+                <button class="top-icon-btn"
+                        onclick="window.location.href='notifications.html'">
+
+                    <i class="bi bi-bell"></i>
+
+                </button>
+
+
+                <button class="top-icon-btn"
+                        id="themeButton">
+
+                    <i class="bi bi-moon"></i>
+
+                </button>
+
+
+                <div class="top-profile">
+
+                    <div class="top-avatar"
+                         id="topAvatar">
+
+                        P
+
+                    </div>
+
+                    <div>
+
+                        <strong id="topUserName">
+                            Patient
+                        </strong>
+
+                        <small>
+                            Patient
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- CONTENT -->
+
+        <div class="patient-content">
+
+
+            <!-- EMERGENCY HEADER -->
+
+            <div class="emergency-page-header">
+
+                <div>
+
+                    <span class="page-label">
+                        EMERGENCY RESPONSE
+                    </span>
+
+                    <h2>
+                        Need immediate help?
+                    </h2>
+
+                    <p>
+                        Send an emergency alert to MEDRA.
+                        Your location and emergency information
+                        will be shared with the response system.
+                    </p>
+
+                </div>
+
+                <div class="emergency-page-icon">
+
+                    <i class="bi bi-shield-plus"></i>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- EMERGENCY GRID -->
+
+            <div class="emergency-page-grid">
+
+
+                <!-- SOS -->
+
+                <div class="patient-card emergency-sos-panel">
+
+                    <div class="sos-large-ring">
+
+                        <button id="sendSOSButton"
+                                class="sos-large-button">
+
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+
+                            <strong>SOS</strong>
+
+                            <span>
+                                SEND ALERT
+                            </span>
+
+                        </button>
+
+                    </div>
+
+
+                    <h3>
+                        Emergency SOS
+                    </h3>
+
+                    <p>
+                        Press the button only when you
+                        require immediate emergency assistance.
+                    </p>
+
+
+                    <div class="emergency-security">
+
+                        <i class="bi bi-shield-lock-fill"></i>
+
+                        <span>
+                            Your emergency request is securely
+                            transmitted to MEDRA.
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- DETAILS -->
+
+                <div class="patient-card">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <h3>
+                                <i class="bi bi-clipboard2-pulse"></i>
+
+                                Emergency Information
+
+                            </h3>
+
+                            <p>
+                                Provide additional information
+                                if possible.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="patient-form">
+
+
+                        <div class="patient-field">
+
+                            <label>
+                                Emergency Type
+                            </label>
+
+                            <select id="emergencyType">
+
+                                <option value="">
+                                    Select emergency type
+                                </option>
+
+                                <option>
+                                    Medical Emergency
+                                </option>
+
+                                <option>
+                                    Accident
+                                </option>
+
+                                <option>
+                                    Breathing Problem
+                                </option>
+
+                                <option>
+                                    Chest Pain
+                                </option>
+
+                                <option>
+                                    Unconscious Person
+                                </option>
+
+                                <option>
+                                    Other
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="patient-field">
+
+                            <label>
+                                Additional Information
+                            </label>
+
+                            <textarea
+                                id="emergencyDescription"
+                                rows="5"
+                                placeholder="Describe the emergency if you can..."></textarea>
+
+                        </div>
+
+
+                        <div class="location-box">
+
+                            <div class="location-icon">
+
+                                <i class="bi bi-geo-alt-fill"></i>
+
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Current Location
+                                </strong>
+
+                                <span id="locationText">
+                                    Location not retrieved
+                                </span>
+
+                            </div>
+
+                            <button
+                                id="getLocationButton"
+                                class="outline-btn">
+
+                                <i class="bi bi-crosshair"></i>
+
+                                Get Location
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- STATUS -->
+
+            <div class="patient-card emergency-status-card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <h3>
+                            <i class="bi bi-activity"></i>
+
+                            Emergency Response Status
+                        </h3>
+
+                        <p>
+                            Current emergency response state
+                        </p>
+
+                    </div>
+
+                    <span class="status-badge"
+                          id="emergencyState">
+
+                        No Active Emergency
+
+                    </span>
+
+                </div>
+
+
+                <div class="emergency-timeline">
+
+                    <div class="timeline-item active">
+
+                        <div class="timeline-icon">
+
+                            <i class="bi bi-check"></i>
+
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Ready
+                            </strong>
+
+                            <span>
+                                MEDRA emergency system is ready
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="timeline-item">
+
+                        <div class="timeline-icon">
+                            2
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Emergency Created
+                            </strong>
+
+                            <span>
+                                Waiting for emergency request
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="timeline-item">
+
+                        <div class="timeline-icon">
+                            3
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Ambulance Assigned
+                            </strong>
+
+                            <span>
+                                Ambulance will be assigned
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="timeline-item">
+
+                        <div class="timeline-icon">
+                            4
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Hospital Prepared
+                            </strong>
+
+                            <span>
+                                Receiving hospital will be prepared
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </main>
+
+</div>
+
+
+
+<!-- CONFIRMATION MODAL -->
+
+<div class="medra-modal"
+     id="sosModal">
+
+    <div class="medra-modal-box">
+
+        <div class="modal-icon emergency-modal-icon">
+
+            <i class="bi bi-exclamation-triangle-fill"></i>
+
+        </div>
+
+        <h2>
+            Confirm Emergency SOS
+        </h2>
+
+        <p>
+            Are you sure you want to send an emergency
+            alert? Your current location will be shared
+            with MEDRA emergency services.
+        </p>
+
+        <div class="modal-actions">
+
+            <button class="secondary-action"
+                    id="cancelSOS">
+
+                Cancel
+
+            </button>
+
+            <button class="sos-action"
+                    id="confirmSOS">
+
+                <i class="bi bi-broadcast-pin"></i>
+
+                Confirm SOS
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script src="../../js/common.js"></script>
+<script src="../../js/patient/emergency.js"></script>
+
+</body>
+
+</html>
