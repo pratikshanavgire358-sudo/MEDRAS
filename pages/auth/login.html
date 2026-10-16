@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>MedRA — Login</title>
+    <title>MEDRA | Portal Authentication</title>
 
     <link rel="stylesheet" href="../../css/style.css">
     <link rel="stylesheet" href="../../css/auth.css">
@@ -15,152 +14,121 @@
 <body>
 
     <main class="center">
-
-        <section class="auth">
+        <section class="auth" style="max-width: 680px;">
 
             <!-- Top bar -->
             <div class="appbar">
-
-                <button
-                    type="button"
-                    class="btn ghost"
-                    onclick="go('home')">
-                    ← Back
+                <button type="button" class="btn ghost" onclick="go('home')">
+                    ← Back to Home
                 </button>
-
-                <button
-                    type="button"
-                    class="theme"
-                    onclick="toggleTheme()">
+                <button type="button" class="theme" onclick="toggleTheme()">
                     ☾ Dark
                 </button>
-
             </div>
 
-            <h1 style="text-align:center">
-                Login to Your Account
-            </h1>
-
-            <p style="text-align:center; color:var(--muted)">
-                Select your login type to continue
-            </p>
-
-            <!-- Login roles -->
-            <div class="roles">
-
-                <!-- Patient / Family -->
-                <div class="role">
-
-                    <div class="big">👤</div>
-
-                    <h3>User</h3>
-
-                    <p>Patient / Family Member</p>
-
-                    <button
-    type="button"
-    class="btn"
-    onclick="window.location.href='patient-login.html'">
-    Continue →
-</button>
-                </div>
-
-                <!-- Ambulance -->
-                <div class="role">
-
-                    <div class="big">🚑</div>
-
-                    <h3>Ambulance</h3>
-
-                    <p>EV Doctor / EC Driver</p>
-
-                    <button
-                        type="button"
-                        class="btn"
-                        onclick="go('ambselect', 'Ambulance')">
-                        Continue →
-                    </button>
-
-                </div>
-
-                <!-- Hospital -->
-                <div class="role">
-
-                    <div class="big">🏥</div>
-
-                    <h3>Hospital</h3>
-
-                    <p>Registration / Staff / Admin</p>
-
-                    <button
-                        type="button"
-                        class="btn"
-                        onclick="go('hospselect', 'Hospital')">
-                        Continue →
-                    </button>
-
-                </div>
-
-                <!-- System Admin -->
-                <div class="role">
-
-                    <div class="big">⚙️</div>
-
-                    <h3>System Admin</h3>
-
-                    <p>Full Access</p>
-
-                    <button
-                        type="button"
-                        class="btn"
-                        onclick="go('adminlogin', 'System Admin')">
-                        Continue →
-                    </button>
-
-                </div>
-
-                <!-- Traffic Control -->
-                <div class="role">
-
-                    <div class="big">🚦</div>
-
-                    <h3>City Traffic Control Room</h3>
-
-                    <p>Traffic Management</p>
-
-                    <button
-                        type="button"
-                        class="btn"
-                        onclick="go('traffic', 'City Traffic Control Room')">
-                        Continue →
-                    </button>
-
-                </div>
-
+            <div class="auth-header" style="text-align:center; margin-bottom: 24px;">
+                <div class="auth-icon" style="font-size: 32px; margin-bottom: 8px;">✚</div>
+                <h1>Login to MEDRA</h1>
+                <p style="color:var(--muted)">
+                    Smart Emergency Response Ecosystem
+                </p>
             </div>
 
-            <!-- Registration -->
-            <p style="
-                text-align:center;
-                color:var(--muted);
-                margin-top:20px;
-            ">
+            <!-- Avishkar Demo Quick-Login Presets -->
+            <div style="background: var(--surface2, #eef8f5); border: 1px solid var(--line, #c9e2dc); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                <div style="font-size: 11px; font-weight: 800; letter-spacing: 1px; color: var(--green, #06b878); margin-bottom: 8px; text-transform: uppercase;">
+                    ⚡ Avishkar Demonstration Quick-Fill
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <button type="button" class="btn ghost" style="font-size: 12px; padding: 6px 12px;" onclick="fillDemo('patient')">
+                        👤 Patient
+                    </button>
+                    <button type="button" class="btn ghost" style="font-size: 12px; padding: 6px 12px;" onclick="fillDemo('hospital')">
+                        🏥 Hospital
+                    </button>
+                    <button type="button" class="btn ghost" style="font-size: 12px; padding: 6px 12px;" onclick="fillDemo('ambulance')">
+                        🚑 Ambulance
+                    </button>
+                    <button type="button" class="btn ghost" style="font-size: 12px; padding: 6px 12px;" onclick="fillDemo('admin')">
+                        ⚙️ Admin
+                    </button>
+                </div>
+            </div>
 
-                New to MedRA?
+            <!-- Unified Secure Login Form -->
+            <form id="loginForm">
+                <div class="field">
+                    <label for="email">Registered Email Address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter email address"
+                        autocomplete="username"
+                        required>
+                </div>
 
-                <a
-                    href="#"
-                    onclick="go('register'); return false;"
-                    class="green">
-                    Create an account
-                </a>
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter password"
+                        autocomplete="current-password"
+                        required>
+                </div>
 
+                <!-- Feedback alert -->
+                <div id="loginMessage" style="display:none; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;"></div>
+
+                <button
+                    type="submit"
+                    class="btn full"
+                    id="loginButton"
+                    style="font-size: 15px; font-weight: 700; padding: 12px;">
+                    Sign In to Dashboard →
+                </button>
+            </form>
+
+            <div style="margin: 24px 0 16px; text-align: center; border-top: 1px solid var(--line); padding-top: 20px;">
+                <p style="color:var(--muted); font-size: 13px;">Or access dedicated role login portals:</p>
+            </div>
+
+            <!-- Role Portal Cards -->
+            <div class="roles" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                <div class="role" style="padding: 14px; text-align: center; cursor: pointer;" onclick="window.location.href='patient-login.html'">
+                    <div style="font-size: 24px;">👤</div>
+                    <strong style="font-size: 13px; display:block; margin: 4px 0;">Patient</strong>
+                    <small style="color:var(--muted); font-size: 11px;">Portal</small>
+                </div>
+                <div class="role" style="padding: 14px; text-align: center; cursor: pointer;" onclick="window.location.href='hospital-login.html'">
+                    <div style="font-size: 24px;">🏥</div>
+                    <strong style="font-size: 13px; display:block; margin: 4px 0;">Hospital</strong>
+                    <small style="color:var(--muted); font-size: 11px;">Portal</small>
+                </div>
+                <div class="role" style="padding: 14px; text-align: center; cursor: pointer;" onclick="window.location.href='ambulance-login.html'">
+                    <div style="font-size: 24px;">🚑</div>
+                    <strong style="font-size: 13px; display:block; margin: 4px 0;">Ambulance</strong>
+                    <small style="color:var(--muted); font-size: 11px;">Portal</small>
+                </div>
+                <div class="role" style="padding: 14px; text-align: center; cursor: pointer;" onclick="window.location.href='admin-login.html'">
+                    <div style="font-size: 24px;">⚙️</div>
+                    <strong style="font-size: 13px; display:block; margin: 4px 0;">Admin</strong>
+                    <small style="color:var(--muted); font-size: 11px;">Portal</small>
+                </div>
+            </div>
+
+            <!-- Registration Link -->
+            <p style="text-align:center; color:var(--muted); margin-top:24px; font-size: 13px;">
+                Need a new patient account?
+                <a href="signup.html" class="green" style="font-weight:700;">Create an account</a>
             </p>
 
         </section>
-
     </main>
 
+    <script src="../../js/api.js"></script>
     <script src="../../js/common.js"></script>
     <script src="../../js/navigation.js"></script>
     <script src="../../js/auth/login.js"></script>

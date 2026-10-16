@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEDRA | Ambulance Crew Login</title>
+
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/auth.css">
+    <link rel="stylesheet" href="../../css/responsive.css">
+</head>
+
+<body>
+
+    <main class="center">
+        <section class="auth">
+
+            <div class="appbar">
+                <button type="button" class="btn ghost" onclick="window.location.href='login.html'">
+                    ← Back to Role Selection
+                </button>
+                <button type="button" class="theme" onclick="toggleTheme()">
+                    ☾ Dark
+                </button>
+            </div>
+
+            <header class="auth-header">
+                <div class="auth-icon" style="color: var(--danger, #ef4554);">🚑</div>
+                <h1>Ambulance Unit Login</h1>
+                <p>Emergency medical drivers, paramedics and quick response emergency crews.</p>
+            </header>
+
+            <div style="background: var(--surface2, #eef8f5); border: 1px solid var(--line, #c9e2dc); border-radius: 10px; padding: 12px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size: 12px; color: var(--muted);">Avishkar Demo Credentials</span>
+                <button type="button" class="btn ghost" style="font-size: 11px; padding: 4px 10px;" onclick="fillAmbulanceDemo()">
+                    ⚡ Auto-Fill Ambulance
+                </button>
+            </div>
+
+            <form id="loginForm">
+                <div class="field">
+                    <label for="email">Paramedic / Driver Email</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="ambulance@medra.org"
+                        autocomplete="username"
+                        required>
+                </div>
+
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter password"
+                        autocomplete="current-password"
+                        required>
+                </div>
+
+                <p id="loginError" class="error" role="alert" aria-live="polite" hidden></p>
+
+                <button type="submit" class="btn full" id="loginButton">
+                    Enter Ambulance Terminal →
+                </button>
+            </form>
+
+        </section>
+    </main>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="../../js/navigation.js"></script>
+    <script>
+        function fillAmbulanceDemo() {
+            document.getElementById("email").value = "ambulance@medra.org";
+            document.getElementById("password").value = "Password@123";
+        }
+
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const err = document.getElementById("loginError");
+            const btn = document.getElementById("loginButton");
+            err.hidden = true;
+            btn.disabled = true;
+            btn.textContent = "Connecting to dispatch network...";
+
+            try {
+                const email = document.getElementById("email").value.trim().toLowerCase();
+                const password = document.getElementById("password").value;
+                const data = await window.MedraAPI.post("/api/auth/login", { email, password });
+
+                if (data.user.role !== "ambulance" && data.user.role !== "admin") {
+                    throw new Error("This account does not have ambulance crew privileges.");
+                }
+
+                window.MedraAPI.setAuthSession(data.access_token, data.user);
+                window.location.href = "../ambulance/dashboard.html";
+            } catch (error) {
+                err.textContent = error.message;
+                err.hidden = false;
+                btn.disabled = false;
+                btn.textContent = "Enter Ambulance Terminal →";
+            }
+        });
+    </script>
+
+</body>
+</html>

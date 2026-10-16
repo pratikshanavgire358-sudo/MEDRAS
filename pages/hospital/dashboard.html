@@ -2,557 +2,510 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <meta
         http-equiv="Content-Security-Policy"
-        content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000 ws://127.0.0.1:8000 ws://localhost:8000;"
+        content="
+            default-src 'self';
+            style-src 'self';
+            script-src 'self';
+            img-src 'self' data:;
+            connect-src 'self'
+                http://127.0.0.1:8000
+                http://localhost:8000;
+        "
     >
 
-    <meta name="color-scheme" content="light dark">
+    <title>MEDRA | Hospital Management</title>
 
-    <title>MEDRAS | Hospital Dashboard</title>
-
+    <link rel="stylesheet" href="../../css/style.css">
     <link rel="stylesheet" href="../../css/hospital.css">
-    <script src="../../js/hospital.js" defer></script>
+    <script src="../../js/api.js" defer></script>
+    <script src="../../js/common.js" defer></script>
+    <script src="../../js/navigation.js" defer></script>
+    <script src="../../js/hospital/hospital.js" defer></script>
 </head>
 
-<body>
+<body class="hospital-page">
 
-    <!-- Header -->
-    <header class="hospital-header">
+<div class="hospital-layout">
 
-        <a href="hospital-dashboard.html" class="brand">
-            <span class="brand-icon" aria-hidden="true">+</span>
+    <!-- SIDEBAR -->
+
+    <aside class="hospital-sidebar" id="hospitalSidebar">
+
+        <a class="hospital-brand" href="hospital-dashboard.html">
+            <span class="brand-symbol">M</span>
 
             <span>
-                <strong>MEDRAS</strong>
-                <small>Hospital Response Portal</small>
+                <strong>MEDRA</strong>
+                <small>Hospital Network</small>
             </span>
         </a>
 
-        <div class="header-right">
+        <div class="hospital-profile">
 
-            <span class="system-status">
-                <span class="status-dot" aria-hidden="true"></span>
-                System Online
-            </span>
+            <div class="hospital-avatar">H</div>
 
-            <!-- Theme selector -->
-            <div class="theme-control">
-                <label for="hospitalThemeSelect">Appearance</label>
-
-                <select
-                    id="hospitalThemeSelect"
-                    class="theme-select"
-                    aria-label="Choose appearance"
-                >
-                    <option value="system">System</option>
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                </select>
+            <div>
+                <strong id="hospitalName">Hospital Portal</strong>
+                <span id="hospitalRole">Hospital Staff</span>
             </div>
-
-            <button
-                type="button"
-                class="profile-button"
-                id="profileButton"
-                aria-label="Hospital profile"
-            >
-                HP
-            </button>
 
         </div>
 
-    </header>
+        <div class="sidebar-heading">OVERVIEW</div>
 
-    <!-- Main Layout -->
-    <div class="hospital-layout">
+        <nav class="hospital-navigation">
 
-        <!-- Navy Sidebar -->
-        <aside class="hospital-sidebar">
+            <a
+                href="dashboard.html"
+                class="hospital-nav-link active"
+                aria-current="page"
+            >
+                <span class="nav-icon">▦</span>
+                Dashboard
+            </a>
 
-            <div class="sidebar-heading">
-                HOSPITAL WORKSPACE
+            <div class="sidebar-heading">PATIENT OPERATIONS</div>
+
+            <a href="hospital_emergency.html" class="hospital-nav-link">
+                <span class="nav-icon">✚</span>
+                Emergency Arrivals
+                <span class="nav-badge" id="emergencyBadge">0</span>
+            </a>
+
+            <a href="hospital_registration.html" class="hospital-nav-link">
+                <span class="nav-icon">＋</span>
+                Patient Registration
+            </a>
+
+            <a href="hospital_verification.html" class="hospital-nav-link">
+                <span class="nav-icon">✓</span>
+                Patient Verification
+            </a>
+
+            <a href="hospital_patient.html" class="hospital-nav-link">
+                <span class="nav-icon">♙</span>
+                Patient Search
+            </a>
+
+            <div class="sidebar-heading">DATA COLLECTION</div>
+
+            <a
+                href="hospital-data-collection.html"
+                class="hospital-nav-link"
+            >
+                <span class="nav-icon">▤</span>
+                Patient Data
+            </a>
+
+            <a
+                href="hospital-medical-history.html"
+                class="hospital-nav-link"
+            >
+                <span class="nav-icon">▧</span>
+                Medical History
+            </a>
+
+            <a href="hospital-documents.html" class="hospital-nav-link">
+                <span class="nav-icon">▣</span>
+                Documents
+            </a>
+
+            <a href="hospital-allergies.html" class="hospital-nav-link">
+                <span class="nav-icon">!</span>
+                Allergies
+            </a>
+
+            <a href="hospital-medications.html" class="hospital-nav-link">
+                <span class="nav-icon">⊕</span>
+                Medications
+            </a>
+
+            <a href="hospital-vitals.html" class="hospital-nav-link">
+                <span class="nav-icon">♡</span>
+                Vitals
+            </a>
+
+            <div class="sidebar-heading">ADMINISTRATION</div>
+
+            <a href="hospital-staff.html" class="hospital-nav-link">
+                <span class="nav-icon">♧</span>
+                Staff Management
+            </a>
+
+            <a
+                href="hospital-medical-resources.html"
+                class="hospital-nav-link"
+            >
+                <span class="nav-icon">▥</span>
+                Medical Resources
+            </a>
+
+            <a href="hospital-history.html" class="hospital-nav-link">
+                <span class="nav-icon">◷</span>
+                Activity History
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            <span class="system-indicator"></span>
+            MEDRA Interface
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+
+    <main class="hospital-main">
+
+        <!-- TOP BAR -->
+
+        <header class="hospital-topbar">
+
+            <button
+                type="button"
+                class="menu-toggle"
+                id="hospitalMenuButton"
+                aria-label="Toggle navigation"
+                aria-expanded="false"
+            >
+                ☰
+            </button>
+
+            <div class="topbar-heading">
+                <span class="breadcrumb">MEDRA / Hospital</span>
+                <h1>Hospital Dashboard</h1>
             </div>
 
-            <nav class="hospital-navigation" aria-label="Hospital navigation">
+            <div class="topbar-actions">
+
+                <div class="theme-control">
+                    <label for="hospitalThemeSelect">Appearance</label>
+
+                    <select
+                        id="hospitalThemeSelect"
+                        class="theme-select"
+                    >
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+
+                <button
+                    type="button"
+                    class="profile-button"
+                    id="profileButton"
+                >
+                    <span class="profile-avatar" id="staffAvatar">H</span>
+
+                    <span class="profile-details">
+                        <strong id="staffName">Hospital Staff</strong>
+                        <small id="staffDesignation">Staff Account</small>
+                    </span>
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE CONTENT -->
+
+        <section class="hospital-content">
+
+            <div class="welcome-section">
+
+                <div>
+                    <p class="eyebrow">HOSPITAL OPERATIONS</p>
+
+                    <h2>Hospital Overview</h2>
+
+                    <p>
+                        Monitor incoming patients, emergency arrivals
+                        and hospital operations from one place.
+                    </p>
+                </div>
 
                 <a
-                    href="hospital-dashboard.html"
-                    class="nav-link active"
-                    aria-current="page"
+                    href="hospital-registration.html"
+                    class="primary-button"
                 >
-                    <span class="nav-icon" aria-hidden="true">▦</span>
-                    Dashboard
+                    + Register Patient
                 </a>
 
-                <a href="hospitals.html" class="nav-link">
-                    <span class="nav-icon" aria-hidden="true">⌂</span>
-                    Hospital Directory
-                </a>
+            </div>
 
-                <a href="hospital-emergency.html" class="nav-link">
-                    <span class="nav-icon" aria-hidden="true">⚕</span>
-                    Emergency Centre
-                    <span class="nav-badge" id="emergencyBadge">2</span>
-                </a>
 
-                <a href="hospital-patients.html" class="nav-link">
-                    <span class="nav-icon" aria-hidden="true">♧</span>
-                    Patients
-                </a>
+            <!-- DEMO DATA NOTICE -->
 
-                <a href="hospital-data-collection.html" class="nav-link">
-                    <span class="nav-icon" aria-hidden="true">▤</span>
-                    Data Collection
-                </a>
-
-                <a href="hospital-medical-resources.html" class="nav-link">
-                    <span class="nav-icon" aria-hidden="true">▣</span>
-                    Medical Resources
-                </a>
-
-                <a href="hospital-staff.html" class="nav-link">
-                    <span class="nav-icon" aria-hidden="true">♙</span>
-                    Staff Management
-                </a>
-
-                <a href="hospital-history.html" class="nav-link">
-                    <span class="nav-icon" aria-hidden="true">◷</span>
-                    Hospital History
-                </a>
-
-            </nav>
-
-            <div class="sidebar-footer">
-                <div class="sidebar-footer-icon" aria-hidden="true">i</div>
+            <div class="demo-notice" id="demoNotice">
+                <span class="notice-icon">i</span>
 
                 <div>
-                    <strong>MEDRAS Demo</strong>
-                    <p>Simulated hospital data</p>
+                    <strong>Frontend preview</strong>
+
+                    <p>
+                        Dashboard values are demonstration data until
+                        the hospital APIs are connected.
+                    </p>
                 </div>
             </div>
 
-        </aside>
 
-        <!-- Dashboard Content -->
-        <main class="hospital-main">
+            <!-- STATISTICS -->
 
-            <!-- Welcome -->
-            <section class="welcome-section">
+            <section class="stats-grid" aria-label="Hospital statistics">
 
-                <div>
-                    <div class="eyebrow">HOSPITAL OPERATIONS</div>
+                <article class="stat-card">
 
-                    <h1>Hospital Dashboard</h1>
-
-                    <p>
-                        Monitor emergency requests, patient arrivals,
-                        medical resources, and hospital readiness.
-                    </p>
-                </div>
-
-                <div class="welcome-actions">
-
-                    <a
-                        href="hospital-emergency.html"
-                        class="button button-primary"
-                    >
-                        + View Emergencies
-                    </a>
-
-                    <button
-                        type="button"
-                        class="button button-secondary"
-                        id="refreshDashboard"
-                    >
-                        Refresh
-                    </button>
-
-                </div>
-
-            </section>
-
-            <!-- Demo Notice -->
-            <section class="demo-notice" role="status">
-
-                <span class="notice-icon" aria-hidden="true">i</span>
-
-                <div>
-                    <strong>Demonstration Mode</strong>
-
-                    <p>
-                        Dashboard figures are illustrative sample data.
-                        They do not represent verified hospital capacity
-                        or live emergency availability.
-                    </p>
-                </div>
-
-            </section>
-
-            <!-- Dashboard Metrics -->
-            <section class="metric-grid" aria-label="Hospital statistics">
-
-                <article class="metric-card">
-                    <div class="metric-top">
-                        <span>Incoming Emergencies</span>
-                        <span class="metric-icon icon-red" aria-hidden="true">!</span>
+                    <div class="stat-top">
+                        <span>Incoming Patients</span>
+                        <span class="stat-icon green-icon">♙</span>
                     </div>
 
-                    <div class="metric-value" id="incomingCount">02</div>
+                    <strong class="stat-number" id="incomingCount">12</strong>
 
-                    <p class="metric-description">
-                        Awaiting hospital review
-                    </p>
+                    <span class="stat-description">
+                        Awaiting registration
+                    </span>
 
-                    <a href="hospital-emergency.html">
-                        Review emergencies →
-                    </a>
                 </article>
 
-                <article class="metric-card">
-                    <div class="metric-top">
-                        <span>Active Patients</span>
-                        <span class="metric-icon icon-blue" aria-hidden="true">+</span>
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+                        <span>Emergency Arrivals</span>
+                        <span class="stat-icon red-icon">✚</span>
                     </div>
 
-                    <div class="metric-value" id="activePatientCount">18</div>
+                    <strong class="stat-number" id="emergencyCount">3</strong>
 
-                    <p class="metric-description">
-                        Illustrative patient count
-                    </p>
+                    <span class="stat-description">
+                        Require attention
+                    </span>
 
-                    <a href="hospital-patients.html">
-                        View patients →
-                    </a>
                 </article>
 
-                <article class="metric-card">
-                    <div class="metric-top">
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
                         <span>Available Beds</span>
-                        <span class="metric-icon icon-green" aria-hidden="true">✓</span>
+                        <span class="stat-icon blue-icon">▤</span>
                     </div>
 
-                    <div class="metric-value" id="availableBedCount">12</div>
+                    <strong class="stat-number" id="availableBedCount">24</strong>
 
-                    <p class="metric-description">
-                        Sample general-bed availability
-                    </p>
+                    <span class="stat-description">
+                        Demonstration capacity
+                    </span>
 
-                    <a href="hospital-medical-resources.html">
-                        Manage resources →
-                    </a>
                 </article>
 
-                <article class="metric-card">
-                    <div class="metric-top">
-                        <span>Medical Staff</span>
-                        <span class="metric-icon icon-purple" aria-hidden="true">♙</span>
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+                        <span>Hospital Staff</span>
+                        <span class="stat-icon purple-icon">♧</span>
                     </div>
 
-                    <div class="metric-value" id="staffCount">24</div>
+                    <strong class="stat-number" id="staffCount">8</strong>
 
-                    <p class="metric-description">
-                        Illustrative staff count
-                    </p>
+                    <span class="stat-description">
+                        Demonstration accounts
+                    </span>
 
-                    <a href="hospital-staff.html">
-                        View staff →
-                    </a>
                 </article>
 
             </section>
 
-            <!-- Emergency and Resource Overview -->
-            <section class="dashboard-grid">
 
-                <article class="panel emergency-panel">
+            <!-- QUICK ACTIONS -->
 
-                    <div class="panel-heading">
-                        <div>
-                            <h2>Emergency Overview</h2>
-                            <p>
-                                Sample emergency requests for the demonstration.
-                            </p>
-                        </div>
+            <section class="panel-section">
 
-                        <a href="hospital-emergency.html">View all</a>
+                <div class="section-heading">
+                    <div>
+                        <h2>Quick Actions</h2>
+                        <p>Access frequently used hospital functions.</p>
                     </div>
+                </div>
 
-                    <div class="table-wrapper">
 
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Emergency ID</th>
-                                    <th>Emergency Type</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
+                <div class="quick-actions-grid">
 
-                            <tbody id="emergencyTableBody">
+                    <a
+                        href="hospital_registration.html"
+                        class="action-card"
+                    >
+                        <span class="action-icon">＋</span>
 
-                                <tr>
-                                    <td>DEMO-ER-001</td>
-                                    <td>Medical Emergency</td>
-                                    <td>
-                                        <span class="priority priority-high">
-                                            High
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="status status-pending">
-                                            Awaiting Review
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="hospital-emergency.html">
-                                            Review
-                                        </a>
-                                    </td>
-                                </tr>
+                        <strong>Register Patient</strong>
 
-                                <tr>
-                                    <td>DEMO-ER-002</td>
-                                    <td>Accident</td>
-                                    <td>
-                                        <span class="priority priority-medium">
-                                            Medium
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="status status-ready">
-                                            Preparation
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="hospital-emergency.html">
-                                            Review
-                                        </a>
-                                    </td>
-                                </tr>
+                        <span>
+                            Create a hospital registration.
+                        </span>
+                    </a>
 
-                            </tbody>
-                        </table>
 
-                    </div>
+                    <a
+                        href="hospital_emergency.html"
+                        class="action-card"
+                    >
+                        <span class="action-icon emergency-action">✚</span>
 
-                    <p class="table-note">
-                        These records are examples, not real emergency cases.
-                    </p>
+                        <strong>Emergency Arrival</strong>
 
-                </article>
+                        <span>
+                            Review incoming emergencies.
+                        </span>
+                    </a>
 
-                <!-- Resource Readiness -->
-                <article class="panel readiness-panel">
 
-                    <div class="panel-heading">
-                        <div>
-                            <h2>Resource Readiness</h2>
-                            <p>Illustrative capacity overview</p>
-                        </div>
-                    </div>
+                    <a
+                        href="hospital_patients.html"
+                        class="action-card"
+                    >
+                        <span class="action-icon">⌕</span>
 
-                    <div class="resource-row">
-                        <div class="resource-label">
-                            <span>General Beds</span>
-                            <strong>12 / 30</strong>
-                        </div>
+                        <strong>Search Patient</strong>
 
-                        <div class="progress-track">
-                            <div class="progress-bar progress-green progress-40"></div>
-                        </div>
-                    </div>
+                        <span>
+                            Find an authorized patient record.
+                        </span>
+                    </a>
 
-                    <div class="resource-row">
-                        <div class="resource-label">
-                            <span>ICU Beds</span>
-                            <strong>3 / 10</strong>
-                        </div>
 
-                        <div class="progress-track">
-                            <div class="progress-bar progress-blue progress-30"></div>
-                        </div>
-                    </div>
+                    <a
+                        href="hospital-data-collection.html"
+                        class="action-card"
+                    >
+                        <span class="action-icon">▤</span>
 
-                    <div class="resource-row">
-                        <div class="resource-label">
-                            <span>Ventilators</span>
-                            <strong>4 / 8</strong>
-                        </div>
+                        <strong>Patient Data</strong>
 
-                        <div class="progress-track">
-                            <div class="progress-bar progress-orange progress-50"></div>
-                        </div>
-                    </div>
+                        <span>
+                            Manage authorized medical information.
+                        </span>
+                    </a>
 
-                    <div class="resource-row">
-                        <div class="resource-label">
-                            <span>Available Doctors</span>
-                            <strong>6 / 12</strong>
-                        </div>
+                </div>
 
-                        <div class="progress-track">
-                            <div class="progress-bar progress-purple progress-50"></div>
-                        </div>
+            </section>
+
+
+            <!-- INCOMING PATIENTS -->
+
+            <section class="panel-section">
+
+                <div class="section-heading">
+
+                    <div>
+                        <h2>Incoming Patients</h2>
+                        <p>Preview of patients awaiting processing.</p>
                     </div>
 
                     <a
-                        href="hospital-medical-resources.html"
-                        class="full-width-link"
+                        href="hospital_registration.html"
+                        class="text-link"
                     >
-                        Open Resource Management →
+                        Open Registration →
                     </a>
 
-                </article>
+                </div>
+
+
+                <div class="table-container">
+
+                    <table class="hospital-table">
+
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Patient</th>
+                                <th>Arrival</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="incomingPatientsBody">
+
+                            <tr>
+                                <td colspan="5" class="empty-state">
+                                    Demonstration data will appear here.
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
 
             </section>
 
-            <!-- Departments and Quick Actions -->
-            <section class="dashboard-grid secondary-grid">
 
-                <article class="panel">
+            <!-- EMERGENCY OVERVIEW -->
 
-                    <div class="panel-heading">
-                        <div>
-                            <h2>Hospital Departments</h2>
-                            <p>Access the main operational teams</p>
-                        </div>
+            <section class="panel-section">
+
+                <div class="section-heading">
+
+                    <div>
+                        <h2>Emergency Overview</h2>
+                        <p>Monitor emergency cases requiring attention.</p>
                     </div>
 
-                    <div class="department-list">
+                    <a
+                        href="hospital_emergency.html"
+                        class="text-link"
+                    >
+                        View Emergencies →
+                    </a>
 
-                        <a href="hospital-staff.html" class="department-item">
-                            <span class="department-icon icon-blue">S</span>
+                </div>
 
-                            <span>
-                                <strong>Registration Staff</strong>
-                                <small>Patient reception and verification</small>
-                            </span>
 
-                            <span class="department-arrow">→</span>
-                        </a>
+                <div class="emergency-summary" id="emergencySummary">
 
-                        <a
-                            href="hospital-data-collection.html"
-                            class="department-item"
-                        >
-                            <span class="department-icon icon-green">D</span>
+                    <div class="emergency-summary-icon">✚</div>
 
-                            <span>
-                                <strong>Data Collection</strong>
-                                <small>Vitals, history, and documents</small>
-                            </span>
+                    <div>
+                        <strong>Emergency management</strong>
 
-                            <span class="department-arrow">→</span>
-                        </a>
-
-                        <a
-                            href="hospital-medical-resources.html"
-                            class="department-item"
-                        >
-                            <span class="department-icon icon-purple">R</span>
-
-                            <span>
-                                <strong>Resource Management</strong>
-                                <small>Beds, equipment, and availability</small>
-                            </span>
-
-                            <span class="department-arrow">→</span>
-                        </a>
-
-                        <a
-                            href="hospital-staff.html"
-                            class="department-item"
-                        >
-                            <span class="department-icon icon-orange">M</span>
-
-                            <span>
-                                <strong>Medical Staff</strong>
-                                <small>Patient preparation and coordination</small>
-                            </span>
-
-                            <span class="department-arrow">→</span>
-                        </a>
-
+                        <p>
+                            Emergency records will appear here when the
+                            hospital APIs are connected.
+                        </p>
                     </div>
 
-                </article>
-
-                <article class="panel quick-actions-panel">
-
-                    <div class="panel-heading">
-                        <div>
-                            <h2>Quick Actions</h2>
-                            <p>Navigate to hospital operations</p>
-                        </div>
-                    </div>
-
-                    <div class="quick-actions">
-
-                        <a href="hospital-patients.html" class="quick-action">
-                            <span class="quick-action-icon">+</span>
-
-                            <span>
-                                <strong>Patient Arrival</strong>
-                                <small>Register and receive patients</small>
-                            </span>
-                        </a>
-
-                        <a
-                            href="hospital-data-collection.html"
-                            class="quick-action"
-                        >
-                            <span class="quick-action-icon">▤</span>
-
-                            <span>
-                                <strong>Collect Medical Data</strong>
-                                <small>Record clinical information</small>
-                            </span>
-                        </a>
-
-                        <a
-                            href="hospital-medical-resources.html"
-                            class="quick-action"
-                        >
-                            <span class="quick-action-icon">▣</span>
-
-                            <span>
-                                <strong>Update Resources</strong>
-                                <small>Manage beds and equipment</small>
-                            </span>
-                        </a>
-
-                        <a
-                            href="hospital-history.html"
-                            class="quick-action"
-                        >
-                            <span class="quick-action-icon">◷</span>
-
-                            <span>
-                                <strong>View Hospital History</strong>
-                                <small>Review completed cases</small>
-                            </span>
-                        </a>
-
-                    </div>
-
-                </article>
+                </div>
 
             </section>
 
-            <!-- Footer -->
+
+            <!-- FOOTER -->
+
             <footer class="hospital-footer">
-                <span>MEDRAS — Smart Emergency Response System</span>
-                <span>Hospital Operations Portal · Demo Interface</span>
+                <span>MEDRA Smart Emergency Response</span>
+                <span>Hospital Operations Interface</span>
             </footer>
 
-        </main>
+        </section>
 
-    </div>
+    </main>
+
+</div>
 
 </body>
 </html>

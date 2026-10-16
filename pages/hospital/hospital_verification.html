@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <title>Patient Verification | MEDRA</title>
+
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/hospital.css">
+</head>
+
+<body>
+<div class="hospital-layout">
+
+    <aside class="hospital-sidebar" id="hospitalSidebar">
+        <div class="hospital-brand">
+            <div class="hospital-brand-icon">M</div>
+            <div>
+                <h2>MEDRA</h2>
+                <p>Hospital Portal</p>
+            </div>
+        </div>
+
+        <div class="hospital-user-card">
+            <div class="hospital-avatar">HS</div>
+            <div>
+                <strong>Hospital Staff</strong>
+                <span>Verification Desk</span>
+            </div>
+        </div>
+
+        <nav class="hospital-nav" aria-label="Hospital navigation">
+            <p class="hospital-nav-heading">WORKSPACE</p>
+
+            <a href="dashboard.html">Dashboard</a>
+            <a href="hospital_emergency.html">Emergency Arrivals</a>
+            <a href="hospital_registration.html">Patient Registration</a>
+            <a href="hospital_verification.html" class="active"
+               aria-current="page">Patient Verification</a>
+            <a href="hospital_patients.html">Patient Directory</a>
+            <a href="hospital-data-collection.html">Data Collection</a>
+            <a href="hospital-medical-history.html">Medical History</a>
+
+            <p class="hospital-nav-heading">MANAGEMENT</p>
+
+            <a href="hospital-documents.html">Documents</a>
+            <a href="hospital-allergies.html">Allergies</a>
+            <a href="hospital-medications.html">Medications</a>
+            <a href="hospital-vitals.html">Patient Vitals</a>
+            <a href="hospital-staff.html">Staff Management</a>
+            <a href="hospital-medical-resources.html">Medical Resources</a>
+            <a href="hospital-history.html">Activity History</a>
+        </nav>
+
+        <div class="hospital-sidebar-footer">
+            <span class="status-dot"></span>
+            Frontend demonstration
+        </div>
+    </aside>
+
+    <main class="hospital-main">
+
+        <header class="hospital-topbar">
+            <div class="hospital-topbar-left">
+                <button type="button" id="hospitalMenuButton"
+                        class="hospital-menu-button"
+                        aria-label="Toggle navigation"
+                        aria-expanded="false">
+                    ☰
+                </button>
+
+                <div>
+                    <p class="hospital-breadcrumb">Hospital / Patient Services</p>
+                    <h1>Patient Verification</h1>
+                </div>
+            </div>
+
+            <div class="hospital-topbar-actions">
+                <div class="theme-control">
+                    <label for="hospitalThemeSelect">Appearance</label>
+                    <select id="hospitalThemeSelect" class="theme-select">
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+
+                <div class="verification-staff-avatar"
+                     aria-label="Hospital staff">HS</div>
+            </div>
+        </header>
+
+        <section class="verification-page">
+
+            <div class="verification-intro">
+                <div>
+                    <span class="verification-eyebrow">IDENTITY & RECORD ACCESS</span>
+                    <h2>Verify patient information</h2>
+                    <p>
+                        Review the available registration details before
+                        proceeding with authorized hospital services.
+                    </p>
+                </div>
+
+                <div class="verification-demo-badge">
+                    DEMO MODE
+                </div>
+            </div>
+
+            <div class="verification-notice" role="note">
+                <strong>Privacy reminder</strong>
+                <p>
+                    Access only the information necessary for your assigned
+                    duties. This demonstration does not verify government
+                    identity documents or connect to ABDM/ABHA.
+                </p>
+            </div>
+
+            <div class="verification-grid">
+
+                <section class="verification-card">
+                    <div class="verification-card-heading">
+                        <div>
+                            <h3>Find patient</h3>
+                            <p>Enter the available registration reference.</p>
+                        </div>
+                        <span class="verification-step">01</span>
+                    </div>
+
+                    <form id="verificationSearchForm">
+                        <label for="patientReference">
+                            Patient reference ID
+                        </label>
+
+                        <input
+                            type="text"
+                            id="patientReference"
+                            name="patientReference"
+                            placeholder="e.g. MEDRA-DEMO-001"
+                            maxlength="40"
+                            autocomplete="off"
+                            required
+                        >
+
+                        <label for="verificationMethod">
+                            Verification method
+                        </label>
+
+                        <select id="verificationMethod" required>
+                            <option value="">Select a method</option>
+                            <option value="registration">
+                                Registration details
+                            </option>
+                            <option value="hospital-id">
+                                Hospital-issued ID
+                            </option>
+                            <option value="abha">
+                                ABHA reference — not connected
+                            </option>
+                        </select>
+
+                        <button type="submit" class="verification-primary-btn">
+                            Find Patient
+                        </button>
+
+                        <p class="verification-help">
+                            Demo reference: MEDRA-DEMO-001
+                        </p>
+                    </form>
+
+                    <div id="verificationSearchMessage"
+                         class="verification-message"
+                         role="status"
+                         aria-live="polite"></div>
+                </section>
+
+                <section class="verification-card verification-result-card">
+                    <div class="verification-card-heading">
+                        <div>
+                            <h3>Verification result</h3>
+                            <p>Review the information returned by the demo.</p>
+                        </div>
+                        <span class="verification-step">02</span>
+                    </div>
+
+                    <div id="verificationEmptyState"
+                         class="verification-empty-state">
+                        <div class="verification-empty-icon">✓</div>
+                        <h4>No patient selected</h4>
+                        <p>
+                            Search using a demo reference to display
+                            sample registration information.
+                        </p>
+                    </div>
+
+                    <div id="verificationResult" hidden>
+                        <div class="verification-patient-heading">
+                            <div class="verification-patient-avatar">P</div>
+                            <div>
+                                <h4 id="resultPatientName">Demo Patient</h4>
+                                <p id="resultPatientReference">
+                                    MEDRA-DEMO-001
+                                </p>
+                            </div>
+                            <span class="verification-status">
+                                Demo record
+                            </span>
+                        </div>
+
+                        <dl class="verification-details">
+                            <div>
+                                <dt>Registration reference</dt>
+                                <dd id="resultReference">—</dd>
+                            </div>
+                            <div>
+                                <dt>Identity verification</dt>
+                                <dd id="resultIdentityStatus">Not verified</dd>
+                            </div>
+                            <div>
+                                <dt>Registration review</dt>
+                                <dd id="resultRegistrationStatus">Pending</dd>
+                            </div>
+                            <div>
+                                <dt>ABDM/ABHA connection</dt>
+                                <dd>Not connected</dd>
+                            </div>
+                        </dl>
+
+                        <div class="verification-checklist">
+                            <h4>Staff review checklist</h4>
+
+                            <label class="verification-check">
+                                <input type="checkbox" id="checkRegistration">
+                                <span>Registration information reviewed</span>
+                            </label>
+
+                            <label class="verification-check">
+                                <input type="checkbox" id="checkIdentity">
+                                <span>Identity checked through an approved process</span>
+                            </label>
+
+                            <label class="verification-check">
+                                <input type="checkbox" id="checkAuthorization">
+                                <span>Required authorization confirmed</span>
+                            </label>
+                        </div>
+
+                        <button type="button" id="reviewVerificationButton"
+                                class="verification-primary-btn">
+                            Complete Demo Review
+                        </button>
+
+                        <p class="verification-help">
+                            Completing this review changes only the
+                            demonstration screen, not a real medical record.
+                        </p>
+                    </div>
+                </section>
+
+            </div>
+
+            <section class="verification-workflow-card">
+                <h3>Verification workflow</h3>
+
+                <div class="verification-workflow">
+                    <div class="verification-workflow-step">
+                        <span>1</span>
+                        <div>
+                            <strong>Locate</strong>
+                            <p>Find the patient's registration reference.</p>
+                        </div>
+                    </div>
+
+                    <div class="verification-workflow-step">
+                        <span>2</span>
+                        <div>
+                            <strong>Review</strong>
+                            <p>Check details using an approved process.</p>
+                        </div>
+                    </div>
+
+                    <div class="verification-workflow-step">
+                        <span>3</span>
+                        <div>
+                            <strong>Authorize</strong>
+                            <p>Confirm access permissions before viewing records.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </section>
+    </main>
+</div>
+
+<script src="../../js/api.js" defer></script>
+<script src="../../js/common.js" defer></script>
+<script src="../../js/navigation.js" defer></script>
+<script src="../../js/hospital/hospital_verification.js" defer></script>
+</body>
+</html>

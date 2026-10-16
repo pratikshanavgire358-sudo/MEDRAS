@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEDRA | Ambulance Dispatch Terminal</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/hospital.css">
+    <link rel="stylesheet" href="../../css/responsive.css">
+
+    <style>
+        .amb-header {
+            background: #06273a;
+            color: #fff;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .amb-status-badge {
+            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+        }
+        .mission-stepper {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+        .mission-step-btn {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--line, #c9e2dc);
+            background: #fff;
+            color: var(--text, #10253a);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mission-step-btn.active {
+            background: #06b878;
+            color: #fff;
+            border-color: #06b878;
+        }
+        #ambulanceMap {
+            height: 380px;
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--line, #c9e2dc);
+        }
+    </style>
+</head>
+
+<body class="hospital-page">
+
+    <!-- Top Navigation Header -->
+    <header class="amb-header">
+        <div class="d-flex align-items-center gap-3">
+            <span style="font-size: 28px;">🚑</span>
+            <div>
+                <h4 class="mb-0 fw-bold">MEDRA Emergency Dispatch</h4>
+                <small class="text-white-50">Quick Medical Response Vehicle Terminal</small>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <div class="text-end me-2 d-none d-md-block">
+                <div class="fw-bold" id="driverName">Driver / Paramedic</div>
+                <small class="text-white-50" id="vehicleNumberDisplay">Vehicle: MH-13-EM-108</small>
+            </div>
+
+            <div class="dropdown">
+                <select id="availabilitySelect" class="form-select form-select-sm bg-dark text-white border-secondary">
+                    <option value="AVAILABLE">🟢 Available for Dispatch</option>
+                    <option value="BUSY">🟡 Busy on Mission</option>
+                    <option value="OFFLINE">⚪ Off Duty / Offline</option>
+                </select>
+            </div>
+
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="toggleTheme()">
+                ☀️ / ☾
+            </button>
+
+            <button type="button" class="btn btn-danger btn-sm" onclick="logoutMedra()">
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="container-fluid py-4 px-md-4">
+        <div class="row g-4">
+
+            <!-- Left Column: Active Assignment & Workflow -->
+            <div class="col-lg-7">
+
+                <!-- Active Mission Card -->
+                <div class="card shadow-sm border-0 mb-4" id="missionCard">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-danger p-2"><i class="bi bi-broadcast"></i></span>
+                            <h5 class="mb-0 fw-bold" id="missionTitle">Current Emergency Assignment</h5>
+                        </div>
+                        <span class="badge bg-warning text-dark px-3 py-2 fw-bold" id="assignmentStatusBadge">AWAITING</span>
+                    </div>
+
+                    <div class="card-body p-4" id="missionBody">
+                        <div id="noMissionPrompt" class="text-center py-5 text-muted">
+                            <i class="bi bi-shield-check display-4 text-success mb-3 d-block"></i>
+                            <h5>Standing by for Emergency Dispatch</h5>
+                            <p class="small">Ambulance unit is linked to Solapur Trauma Network. New patient SOS requests will automatically assign here.</p>
+                        </div>
+
+                        <div id="activeMissionDetails" style="display:none;">
+                            <div class="d-flex justify-content-between mb-3">
+                                <div>
+                                    <span class="text-muted small">EMERGENCY REFERENCE</span>
+                                    <h4 class="text-danger fw-bold mb-0" id="missionReference">MEDRA-EMG-0001</h4>
+                                </div>
+                                <div class="text-end">
+                                    <span class="text-muted small">CALLER CONTACT</span>
+                                    <div class="fw-bold" id="missionPatientName">Rajesh Sharma</div>
+                                    <small class="text-muted" id="missionPatientPhone">9876543210</small>
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-light rounded mb-3">
+                                <strong>Condition / Report:</strong>
+                                <p class="mb-0 text-secondary" id="missionDescription">Severe Cardiac Chest Pain. Dispatch immediately.</p>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <div class="border rounded p-3 h-100">
+                                        <div class="text-muted small mb-1"><i class="bi bi-geo-alt-fill text-danger"></i> PICKUP LOCATION</div>
+                                        <strong id="missionPickupCoords">17.659900, 75.906400</strong>
+                                        <div class="small text-muted mt-1">Patient Home / Emergency Scene</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="border rounded p-3 h-100">
+                                        <div class="text-muted small mb-1"><i class="bi bi-hospital-fill text-primary"></i> DESTINATION HOSPITAL</div>
+                                        <strong id="missionHospitalName">Solapur District Medical Center</strong>
+                                        <div class="small text-muted mt-1" id="missionHospitalAddress">Near Civil Court, Solapur</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Workflow Stage Buttons -->
+                            <label class="fw-bold text-muted small text-uppercase mb-2">Advance Mission Progress (Saves to PostgreSQL):</label>
+                            <div class="mission-stepper">
+                                <button type="button" class="mission-step-btn" data-status="ACCEPTED">
+                                    1. Accept Call
+                                </button>
+                                <button type="button" class="mission-step-btn" data-status="EN_ROUTE">
+                                    2. En Route to Patient
+                                </button>
+                                <button type="button" class="mission-step-btn" data-status="PATIENT_PICKED_UP">
+                                    3. Patient Picked Up
+                                </button>
+                                <button type="button" class="mission-step-btn" data-status="HOSPITAL_ARRIVED">
+                                    4. Hospital Arrival
+                                </button>
+                                <button type="button" class="mission-step-btn btn-success" data-status="COMPLETED" style="background:#06b878; color:#fff;">
+                                    ✓ 5. Complete Mission
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment Run History -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Recent Ambulance Runs</h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Emergency</th>
+                                    <th>Hospital Destination</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ambulanceHistoryBody" class="small">
+                                <tr><td colspan="5" class="text-center text-muted py-3">Loading trip history...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Live Map & Unit Telemetry -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-map-fill me-2 text-primary"></i>Live Mission Navigation Map</h6>
+                        <span class="badge bg-light text-dark border">OpenStreetMap / Leaflet</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <div id="ambulanceMap"></div>
+                        <div class="mt-3 d-flex justify-content-between small text-muted">
+                            <span><span style="color:#06b878;">●</span> Ambulance</span>
+                            <span><span style="color:#ef4554;">●</span> Patient Pickup</span>
+                            <span><span style="color:#00a8c8;">●</span> Hospital Destination</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Unit Stats -->
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="card p-3 border-0 shadow-sm bg-white text-center">
+                            <small class="text-muted">Completed Runs</small>
+                            <h2 class="fw-bold mb-0 text-primary" id="completedRunsCount">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card p-3 border-0 shadow-sm bg-white text-center">
+                            <small class="text-muted">Network State</small>
+                            <h5 class="fw-bold mb-0 text-success mt-2">Active Dispatched</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../../js/api.js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="../../js/navigation.js"></script>
+    <script src="../../js/ambulance/dashboard.js"></script>
+</body>
+</html>

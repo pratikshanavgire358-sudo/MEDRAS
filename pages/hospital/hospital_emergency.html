@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+
+    <title>Emergency Arrivals | MEDRA Hospital</title>
+
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/hospital.css">
+
+    <script src="../../js/api.js" defer></script>
+    <script src="../../js/common.js" defer></script>
+    <script src="../../js/navigation.js" defer></script>
+    <script src="../../js/hospital/hospital_emergency.js" defer></script>
+</head>
+
+<body class="hospital-emergency-page">
+
+    <div class="hospital-layout">
+
+        <!-- SIDEBAR -->
+        <aside class="hospital-sidebar" id="hospitalSidebar">
+
+            <div class="hospital-brand">
+                <div class="hospital-brand-icon" aria-hidden="true">M</div>
+
+                <div>
+                    <h2>MEDRA</h2>
+                    <p>Hospital Portal</p>
+                </div>
+            </div>
+
+            <div class="hospital-sidebar-label">HOSPITAL MANAGEMENT</div>
+
+            <nav class="hospital-navigation" aria-label="Hospital navigation">
+
+    <a href="./dashboard.html" class="hospital-nav-link">
+        <span aria-hidden="true">▦</span>
+        Dashboard
+    </a>
+
+    <a
+        href="./hospital_emergency.html"
+        class="hospital-nav-link active"
+        aria-current="page"
+    >
+        <span aria-hidden="true">✚</span>
+        Emergency Arrivals
+    </a>
+
+    <a href="./hospital_registration.html" class="hospital-nav-link">
+        <span aria-hidden="true">＋</span>
+        Patient Registration
+    </a>
+
+    <a href="./hospital_verification.html" class="hospital-nav-link">
+        <span aria-hidden="true">✓</span>
+        Patient Verification
+    </a>
+
+    <a href="./hospital_patients.html" class="hospital-nav-link">
+        <span aria-hidden="true">♙</span>
+        Patient Directory
+    </a>
+
+</nav>
+
+            <div class="hospital-sidebar-footer">
+                <span class="hospital-online-dot"></span>
+                Demo interface
+            </div>
+
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="hospital-main">
+
+            <!-- TOP BAR -->
+            <header class="hospital-topbar">
+
+                <button
+                    type="button"
+                    id="hospitalMenuButton"
+                    class="hospital-menu-button"
+                    aria-label="Toggle navigation"
+                    aria-controls="hospitalSidebar"
+                    aria-expanded="false"
+                >
+                    ☰
+                </button>
+
+                <div class="hospital-topbar-heading">
+                    <span class="hospital-breadcrumb">
+                        Hospital / Emergency Management
+                    </span>
+
+                    <h1>Emergency Arrivals &amp; Triage</h1>
+                </div>
+
+                <div class="hospital-topbar-actions">
+
+                    <div class="hospital-system-status">
+                        <span class="hospital-online-dot"></span>
+                        Demo mode
+                    </div>
+
+                    <div class="hospital-theme-control">
+                        <label for="hospitalThemeSelect">Appearance</label>
+
+                        <select id="hospitalThemeSelect">
+                            <option value="system">System</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </div>
+
+                </div>
+
+            </header>
+
+            <!-- PAGE INTRODUCTION -->
+            <section class="emergency-intro">
+
+                <div>
+                    <h2>Emergency Coordination Center</h2>
+
+                    <p>
+                        Review incoming emergency cases and coordinate
+                        patient arrival with authorized hospital staff.
+                    </p>
+                </div>
+
+                <div class="emergency-demo-notice">
+                    <span aria-hidden="true">ⓘ</span>
+                    Fictional demo records — not connected to live emergencies.
+                </div>
+
+            </section>
+
+            <!-- SUMMARY CARDS -->
+            <section class="emergency-summary-grid" aria-label="Emergency statistics">
+
+                <article class="emergency-summary-card">
+                    <div class="emergency-card-heading">
+                        <span>Incoming cases</span>
+                        <span class="emergency-card-icon">↗</span>
+                    </div>
+
+                    <strong id="incomingCount">0</strong>
+                    <p>Cases awaiting arrival</p>
+                </article>
+
+                <article class="emergency-summary-card critical-summary">
+                    <div class="emergency-card-heading">
+                        <span>Critical priority</span>
+                        <span class="emergency-card-icon">!</span>
+                    </div>
+
+                    <strong id="criticalCount">0</strong>
+                    <p>Requires clinical review</p>
+                </article>
+
+                <article class="emergency-summary-card">
+                    <div class="emergency-card-heading">
+                        <span>Awaiting review</span>
+                        <span class="emergency-card-icon">◷</span>
+                    </div>
+
+                    <strong id="waitingCount">0</strong>
+                    <p>Cases not yet received</p>
+                </article>
+
+                <article class="emergency-summary-card">
+                    <div class="emergency-card-heading">
+                        <span>Received today</span>
+                        <span class="emergency-card-icon">✓</span>
+                    </div>
+
+                    <strong id="receivedCount">0</strong>
+                    <p>Demo arrivals recorded</p>
+                </article>
+
+            </section>
+
+            <!-- EMERGENCY QUEUE -->
+            <section class="emergency-panel">
+
+                <div class="emergency-panel-heading">
+
+                    <div>
+                        <h2>Emergency Queue</h2>
+
+                        <p>
+                            Search and review the available demo emergency records.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="refreshEmergencyQueue"
+                        class="emergency-secondary-button"
+                    >
+                        ↻ Refresh queue
+                    </button>
+
+                </div>
+
+                <!-- FILTERS -->
+                <div class="emergency-filters">
+
+                    <div class="emergency-filter-field emergency-search-field">
+                        <label for="emergencySearch">
+                            Search emergency
+                        </label>
+
+                        <input
+                            type="search"
+                            id="emergencySearch"
+                            placeholder="Search reference or emergency type"
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="emergency-filter-field">
+                        <label for="emergencyPriorityFilter">
+                            Priority
+                        </label>
+
+                        <select id="emergencyPriorityFilter">
+                            <option value="all">All priorities</option>
+                            <option value="Critical">Critical</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                            <option value="Unassessed">Unassessed</option>
+                        </select>
+                    </div>
+
+                    <div class="emergency-filter-field">
+                        <label for="emergencyStatusFilter">
+                            Arrival status
+                        </label>
+
+                        <select id="emergencyStatusFilter">
+                            <option value="all">All statuses</option>
+                            <option value="Ambulance en route">Ambulance en route</option>
+                            <option value="Awaiting arrival">Awaiting arrival</option>
+                            <option value="Arrived">Arrived</option>
+                            <option value="Received">Received</option>
+                        </select>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="resetEmergencyFilters"
+                        class="emergency-reset-button"
+                    >
+                        Reset
+                    </button>
+
+                </div>
+
+                <!-- TABLE -->
+                <div class="emergency-table-wrapper">
+
+                    <table class="emergency-table">
+
+                        <thead>
+                            <tr>
+                                <th scope="col">Emergency reference</th>
+                                <th scope="col">Emergency type</th>
+                                <th scope="col">Priority</th>
+                                <th scope="col">Arrival status</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="emergencyTableBody"></tbody>
+
+                    </table>
+
+                    <div id="emergencyEmptyState" class="emergency-empty-state" hidden>
+                        <div aria-hidden="true">⌕</div>
+                        <h3>No matching emergency records</h3>
+                        <p>Try changing your search or filters.</p>
+                    </div>
+
+                </div>
+
+                <div class="emergency-table-footer">
+                    <span id="emergencyResultCount" aria-live="polite">
+                        Loading demo records...
+                    </span>
+
+                    <span>Demo data only</span>
+                </div>
+
+            </section>
+
+            <!-- SELECTED EMERGENCY DETAILS -->
+            <section
+                id="emergencyDetailsPanel"
+                class="emergency-panel emergency-details-panel"
+                hidden
+                aria-labelledby="emergencyDetailsHeading"
+            >
+
+                <div class="emergency-panel-heading">
+
+                    <div>
+                        <span class="emergency-section-label">
+                            CASE SUMMARY
+                        </span>
+
+                        <h2 id="emergencyDetailsHeading">
+                            Selected Emergency
+                        </h2>
+
+                        <p id="selectedEmergencyReference">
+                            No emergency selected
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="closeEmergencyDetails"
+                        class="emergency-close-button"
+                    >
+                        Close
+                    </button>
+
+                </div>
+
+                <div class="emergency-details-grid">
+
+                    <div class="emergency-detail-item">
+                        <span>Emergency type</span>
+                        <strong id="selectedEmergencyType">—</strong>
+                    </div>
+
+                    <div class="emergency-detail-item">
+                        <span>Priority</span>
+                        <strong id="selectedEmergencyPriority">—</strong>
+                    </div>
+
+                    <div class="emergency-detail-item">
+                        <span>Arrival status</span>
+                        <strong id="selectedEmergencyStatus">—</strong>
+                    </div>
+
+                    <div class="emergency-detail-item">
+                        <span>Reported information</span>
+                        <strong id="selectedEmergencyDescription">—</strong>
+                    </div>
+
+                </div>
+
+                <div class="emergency-action-area">
+
+                    <div>
+                        <h3>Arrival management</h3>
+
+                        <p>
+                            Only mark an arrival after hospital staff confirm
+                            that the patient has physically arrived.
+                        </p>
+                    </div>
+
+                    <div class="emergency-action-buttons">
+
+                        <button
+                            type="button"
+                            id="markEmergencyArrived"
+                            class="emergency-primary-button"
+                        >
+                            Mark Arrived
+                        </button>
+
+                        <button
+                            type="button"
+                            id="markEmergencyReceived"
+                            class="emergency-secondary-button"
+                        >
+                            Mark Received
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <p
+                    id="emergencyActionMessage"
+                    class="emergency-action-message"
+                    role="status"
+                    aria-live="polite"
+                ></p>
+
+            </section>
+
+            <!-- FOOTER -->
+            <footer class="hospital-page-footer">
+                <span>MEDRA Smart Emergency Response</span>
+                <span>Hospital emergency management · Demonstration</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+</body>
+</html>

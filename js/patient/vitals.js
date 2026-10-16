@@ -1,198 +1,130 @@
 /* =========================================================
-   MEDRA PATIENT VITALS
+   MEDRA PATIENT VITALS CONTROLLER
    ========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+"use strict";
 
-    loadPatientName();
+document.addEventListener("DOMContentLoaded", async () => {
+    if (typeof requireRoleAuth === "function" && !requireRoleAuth(["patient", "admin"])) {
+        return;
+    }
 
-    setupNotifications();
-
-    setupLogout();
-
-    startDemoMonitoring();
-
+    await loadVitals();
+    setupVitalsLogger();
 });
 
+async function loadVitals() {
+    const api = window.MedraAPI;
+    if (!api) return;
 
-/* =========================================================
-   PATIENT NAME
-   ========================================================= */
-
-function loadPatientName() {
-
-    const patientName =
-        document.getElementById("patientName");
-
-    const savedName =
-        localStorage.getItem("medraSignupName");
-
-    if (patientName && savedName) {
-
-        patientName.textContent = savedName;
-
+    try {
+        const data = await api.get("/api/patient/vitals");
+        const vitals = data.vitals || [];
+        renderVitalsCards(vitals);
+        renderVitalsTable(vitals);
+    } catch (err) {
+        console.error("Vitals load error:", err);
+        if (typeof showNotification === "function") {
+            showNotification("Unable to load latest vitals from database.", "warning");
+        }
     }
-
 }
 
+function renderVitalsCards(vitals) {
+    if (vitals.length === 0) return;
+    const latest = vitals[0];
 
-/* =========================================================
-   NOTIFICATIONS
-   ========================================================= */
+    const hr = document.getElementById("heartRateValue") || document.getElementById("heartRate");
+    const bp = document.getElementById("bpValue") || document.getElementById("bloodPressure");
+    const spo2 = document.getElementById("spo2Value") || document.getElementById("spO2");
+    const temp = document.getElementById("tempValue") || document.getElementById("temperature");
 
-function setupNotifications() {
-
-    const button =
-        document.getElementById("notificationButton");
-
-    if (!button) return;
-
-    button.addEventListener("click", () => {
-
-        window.location.href =
-            "notifications.html";
-
-    });
-
+    if (hr && latest.heart_rate) hr.textContent = latest.heart_rate;
+    if (bp && latest.blood_pressure) bp.textContent = latest.blood_pressure;
+    if (spo2 && latest.sp_o2) spo2.textContent = `${latest.sp_o2}%`;
+    if (temp && latest.temperature) temp.textContent = `${latest.temperature} °C`;
 }
 
+function renderVitalsTable(vitals) {
+    let tbody = document.getElementById("vitalsTableBody") || document.querySelector("table tbody");
+    if (!tbody) return;
 
-/* =========================================================
-   LOGOUT
-   ========================================================= */
+    if (vitals.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-3">No vitals observations recorded yet.</td></tr>`;
+        return;
+    }
 
-function setupLogout() {
-
-    const button =
-        document.getElementById("logoutButton");
-
-    if (!button) return;
-
-    button.addEventListener("click", () => {
-
-        sessionStorage.removeItem("medraAuthenticated");
-        sessionStorage.removeItem("medraRole");
-
-        window.location.href =
-            "../auth/login.html";
-
-    });
-
+    tbody.innerHTML = vitals.map(v => `
+        <tr>
+            <td>${v.recorded_at ? new Date(v.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }) : 'Recent'}</td>
+            <td><strong>${v.heart_rate || '-'}</strong> bpm</td>
+            <td><strong>${v.blood_pressure || '-'}</strong> mmHg</td>
+            <td><strong>${v.sp_o2 || '-'}</strong>%</td>
+            <td>${v.temperature ? v.temperature + ' °C' : '-'}</td>
+            <td>${v.respiratory_rate || '-'} /min</td>
+            <td><span class="badge bg-light text-dark border">${v.source}</span></td>
+        </tr>
+    `).join("");
 }
 
+function setupVitalsLogger() {
+    // Inject Log Vitals button/modal if not present
+    let logBtn = document.getElementById("logVitalsBtn");
+    if (!logBtn) {
+        const topActions = document.querySelector(".top-actions") || document.querySelector(".section-header");
+        if (topActions) {
+            logBtn = document.createElement("button");
+            logBtn.id = "logVitalsBtn";
+            logBtn.className = "btn btn-primary btn-sm";
+            logBtn.style.cssText = "margin-left: 10px; background: #06b878; border: none; padding: 6px 14px; border-radius: 8px; color: #fff; font-weight: 600;";
+            logBtn.textContent = "+ Record Clinical Vitals";
+            topActions.appendChild(logBtn);
+        }
+    }
 
-/* =========================================================
-   DEMO MONITORING
-   ========================================================= */
-
-function startDemoMonitoring() {
-
-    /*
-       Demo only.
-
-       Later:
-       FastAPI
-          ↓
-       WebSocket
-          ↓
-       Patient Vitals
-    */
-
-    setInterval(() => {
-
-        updateDemoVitals();
-
-    }, 5000);
-
+    if (logBtn) {
+        logBtn.addEventListener("click", () => {
+            promptLogVitals();
+        });
+    }
 }
 
+async function promptLogVitals() {
+    const hr = prompt("Enter Heart Rate (bpm, e.g. 75):", "78");
+    if (hr === null) return;
 
-/* =========================================================
-   UPDATE DEMO VITALS
-   ========================================================= */
+    const sys = prompt("Enter Blood Pressure Systolic (mmHg, e.g. 120):", "120");
+    if (sys === null) return;
 
-function updateDemoVitals() {
+    const dia = prompt("Enter Blood Pressure Diastolic (mmHg, e.g. 80):", "80");
+    if (dia === null) return;
 
-    const heartRate =
-        document.getElementById("heartRate");
+    const spo2 = prompt("Enter Oxygen Saturation SpO2 (%, e.g. 98):", "98");
+    if (spo2 === null) return;
 
-    const spo2 =
-        document.getElementById("spo2");
+    const temp = prompt("Enter Body Temperature (°C, e.g. 36.8):", "36.8");
+    if (temp === null) return;
 
-    const temperature =
-        document.getElementById("temperature");
+    const body = {
+        heart_rate: parseInt(hr),
+        blood_pressure_systolic: parseInt(sys),
+        blood_pressure_diastolic: parseInt(dia),
+        sp_o2: parseInt(spo2),
+        temperature: parseFloat(temp),
+        respiratory_rate: 16,
+        source: "PATIENT_INPUT"
+    };
 
-    const respiratoryRate =
-        document.getElementById("respiratoryRate");
-
-    const glucose =
-        document.getElementById("glucose");
-
-    const lastReading =
-        document.getElementById("lastReading");
-
-
-    /*
-       Small changes only so the
-       dashboard looks like live data.
-    */
-
-    if (heartRate) {
-
-        const value =
-            76 + Math.floor(Math.random() * 7);
-
-        heartRate.textContent = value;
-
+    try {
+        const api = window.MedraAPI;
+        await api.post("/api/patient/vitals", body);
+        if (typeof showNotification === "function") {
+            showNotification("Clinical vitals saved to PostgreSQL database!", "success");
+        } else {
+            alert("Vitals saved successfully!");
+        }
+        await loadVitals();
+    } catch (e) {
+        alert(e.message || "Failed to record vitals");
     }
-
-
-    if (spo2) {
-
-        const value =
-            97 + Math.floor(Math.random() * 3);
-
-        spo2.textContent = value;
-
-    }
-
-
-    if (temperature) {
-
-        const value =
-            (98.1 + Math.random() * 0.7)
-            .toFixed(1);
-
-        temperature.textContent = value;
-
-    }
-
-
-    if (respiratoryRate) {
-
-        const value =
-            15 + Math.floor(Math.random() * 4);
-
-        respiratoryRate.textContent = value;
-
-    }
-
-
-    if (glucose) {
-
-        const value =
-            92 + Math.floor(Math.random() * 11);
-
-        glucose.textContent = value;
-
-    }
-
-
-    if (lastReading) {
-
-        lastReading.textContent =
-            "Just now";
-
-    }
-
 }

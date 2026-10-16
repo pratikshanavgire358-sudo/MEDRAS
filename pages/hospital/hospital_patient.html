@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <title>Patient Directory | MEDRA</title>
+
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/hospital.css">
+</head>
+<body>
+
+<div class="hospital-layout">
+
+    <aside class="hospital-sidebar" id="hospitalSidebar">
+        <div class="hospital-brand">
+            <div class="hospital-brand-icon">M</div>
+            <div>
+                <h2>MEDRA</h2>
+                <p>Hospital Portal</p>
+            </div>
+        </div>
+
+        <div class="hospital-user-card">
+            <div class="hospital-avatar">HS</div>
+            <div>
+                <strong>Hospital Staff</strong>
+                <span>Patient Services</span>
+            </div>
+        </div>
+
+        <nav class="hospital-nav" aria-label="Hospital navigation">
+            <p class="hospital-nav-heading">WORKSPACE</p>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="hospital_emergency.html">Emergency Arrivals</a>
+            <a href="hospital_registration.html">Patient Registration</a>
+            <a href="hospital_verification.html">Patient Verification</a>
+            <a href="hospital_patient.html" class="active"
+               aria-current="page">Patient Directory</a>
+            <a href="hospital-data-collection.html">Data Collection</a>
+            <a href="hospital-medical-history.html">Medical History</a>
+
+            <p class="hospital-nav-heading">MANAGEMENT</p>
+            <a href="hospital-documents.html">Documents</a>
+            <a href="hospital-allergies.html">Allergies</a>
+            <a href="hospital-medications.html">Medications</a>
+            <a href="hospital-vitals.html">Patient Vitals</a>
+            <a href="hospital-staff.html">Staff Management</a>
+            <a href="hospital-medical-resources.html">Medical Resources</a>
+            <a href="hospital-history.html">Activity History</a>
+        </nav>
+
+        <div class="hospital-sidebar-footer">
+            <span class="status-dot"></span>
+            Frontend demonstration
+        </div>
+    </aside>
+
+    <main class="hospital-main">
+
+        <header class="hospital-topbar">
+            <div class="hospital-topbar-left">
+                <button type="button" id="hospitalMenuButton"
+                        class="hospital-menu-button"
+                        aria-label="Toggle navigation"
+                        aria-expanded="false">☰</button>
+
+                <div>
+                    <p class="hospital-breadcrumb">Hospital / Patient Services</p>
+                    <h1>Patient Directory</h1>
+                </div>
+            </div>
+
+            <div class="hospital-topbar-actions">
+                <div class="theme-control">
+                    <label for="hospitalThemeSelect">Appearance</label>
+                    <select id="hospitalThemeSelect" class="theme-select">
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+
+                <div class="verification-staff-avatar">HS</div>
+            </div>
+        </header>
+
+        <section class="patient-directory-page">
+
+            <div class="directory-heading">
+                <div>
+                    <span class="directory-eyebrow">PATIENT MANAGEMENT</span>
+                    <h2>Patient records</h2>
+                    <p>
+                        Search and review patient registration information
+                        available to authorized hospital staff.
+                    </p>
+                </div>
+
+                <a class="directory-primary-link"
+                   href="hospital-registration.html">
+                    + Register Patient
+                </a>
+            </div>
+
+            <div class="directory-demo-notice">
+                <strong>Demonstration data only</strong>
+                <span>
+                    The records below are fictional examples. No real patient
+                    database is connected.
+                </span>
+            </div>
+
+            <div class="directory-stat-grid">
+                <article class="directory-stat">
+                    <span>Demo records</span>
+                    <strong id="directoryTotal">4</strong>
+                    <small>Sample directory entries</small>
+                </article>
+
+                <article class="directory-stat">
+                    <span>Registered</span>
+                    <strong id="directoryRegistered">2</strong>
+                    <small>Sample registration status</small>
+                </article>
+
+                <article class="directory-stat">
+                    <span>Pending review</span>
+                    <strong id="directoryPending">1</strong>
+                    <small>Sample verification status</small>
+                </article>
+
+                <article class="directory-stat">
+                    <span>Emergency arrivals</span>
+                    <strong id="directoryEmergency">1</strong>
+                    <small>Sample arrival classification</small>
+                </article>
+            </div>
+
+            <section class="directory-panel">
+
+                <div class="directory-panel-heading">
+                    <div>
+                        <h3>Patient list</h3>
+                        <p>Search by reference, name, or arrival category.</p>
+                    </div>
+                    <span class="directory-demo-tag">DEMO</span>
+                </div>
+
+                <div class="directory-filters">
+
+                    <div class="directory-search">
+                        <label for="directorySearch">Search patients</label>
+                        <input type="search" id="directorySearch"
+                               placeholder="Search reference or name..."
+                               maxlength="100">
+                    </div>
+
+                    <div>
+                        <label for="directoryStatus">Registration status</label>
+                        <select id="directoryStatus">
+                            <option value="all">All statuses</option>
+                            <option value="Registered">Registered</option>
+                            <option value="Pending review">Pending review</option>
+                            <option value="Emergency">Emergency</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="directoryArrival">Arrival category</label>
+                        <select id="directoryArrival">
+                            <option value="all">All categories</option>
+                            <option value="Routine">Routine</option>
+                            <option value="Emergency">Emergency</option>
+                        </select>
+                    </div>
+
+                    <button type="button" id="directoryReset"
+                            class="directory-reset-btn">
+                        Reset
+                    </button>
+                </div>
+
+                <div class="directory-result-summary">
+                    <span id="directoryResultCount" aria-live="polite">
+                        Showing 4 demo records
+                    </span>
+                    <span>Personal information is not stored by this demo.</span>
+                </div>
+
+                <div class="directory-table-wrapper">
+                    <table class="directory-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Patient reference</th>
+                                <th scope="col">Demo name</th>
+                                <th scope="col">Arrival</th>
+                                <th scope="col">Registration</th>
+                                <th scope="col">Review</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="directoryTableBody">
+                            <tr>
+                                <td colspan="5">Loading demo records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="directoryEmpty" class="directory-empty" hidden>
+                    <h3>No matching records</h3>
+                    <p>Try a different search term or reset the filters.</p>
+                </div>
+
+            </section>
+
+            <section class="directory-detail-panel" id="directoryDetail"
+                     aria-live="polite" hidden>
+                <div class="directory-panel-heading">
+                    <div>
+                        <h3>Demo patient summary</h3>
+                        <p>Basic directory information only.</p>
+                    </div>
+                    <button type="button" id="directoryCloseDetail"
+                            class="directory-reset-btn">Close</button>
+                </div>
+
+                <dl class="directory-detail-grid">
+                    <div>
+                        <dt>Reference</dt>
+                        <dd id="detailReference">—</dd>
+                    </div>
+                    <div>
+                        <dt>Demo name</dt>
+                        <dd id="detailName">—</dd>
+                    </div>
+                    <div>
+                        <dt>Arrival category</dt>
+                        <dd id="detailArrival">—</dd>
+                    </div>
+                    <div>
+                        <dt>Registration status</dt>
+                        <dd id="detailStatus">—</dd>
+                    </div>
+                </dl>
+
+                <p class="directory-detail-note">
+                    A real patient profile must be retrieved from the backend
+                    only after authentication and permission checks.
+                </p>
+            </section>
+
+        </section>
+    </main>
+</div>
+
+<script src="../../js/api.js" defer></script>
+<script src="../../js/common.js" defer></script>
+<script src="../../js/navigation.js" defer></script>
+<script src="../../js/hospital/hospital_patient.js" defer></script>
+</body>
+</html>

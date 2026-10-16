@@ -1,151 +1,87 @@
 /* =========================================================
-   MEDRA - Navigation
+   MEDRA Cross-Module Navigation Router
    ========================================================= */
 
-/*
-  Update these paths to match your actual project structure.
+"use strict";
 
-  These paths assume navigation.js is loaded by:
-  frontend/pages/auth/login.html
-
-  The destinations are examples until we confirm your
-  actual filenames.
-*/
-
-const MEDRA_ROUTES = {
-    home: "../../index.html",
-    register: "./register.html",
-
-    userselect: "../user/login.html",
-    ambselect: "../ambulance/login.html",
-    hospselect: "../hospital/login.html",
-
-    adminlogin: "../admin/login.html",
-    traffic: "../traffic/login.html"
-};
-
-
-/* =========================================================
-   General Navigation
-   ========================================================= */
-
-function go(page, role = "") {
-
-    const destination = MEDRA_ROUTES[page];
-
-    if (!destination) {
-        console.error("MEDRA route not configured:", page);
-        alert("This MEDRA page has not been configured yet.");
-        return;
+function getProjectRoot() {
+    const path = window.location.pathname.replace(/\\/g, "/");
+    const pagesIndex = path.indexOf("/pages/");
+    if (pagesIndex !== -1) {
+        return path.substring(0, pagesIndex + 1); // includes trailing slash before pages
     }
-
-    if (role) {
-        sessionStorage.setItem("medraLoginRole", role);
-    }
-
-    window.location.href = destination;
+    return "/";
 }
 
+function navigateTo(targetPath) {
+    const root = getProjectRoot();
+    window.location.href = `${root}${targetPath}`;
+}
 
-/* =========================================================
-   Patient Page Navigation
-   ========================================================= */
+function getRoleDashboardUrl(role) {
+    switch ((role || "").toLowerCase()) {
+        case "patient":
+            return "pages/patient/dashboard.html";
+        case "hospital":
+            return "pages/hospital/dashboard.html";
+        case "ambulance":
+            return "pages/ambulance/dashboard.html";
+        case "admin":
+            return "pages/admin/dashboard.html";
+        default:
+            return "pages/auth/login.html";
+    }
+}
+
+function redirectToDashboard(role) {
+    navigateTo(getRoleDashboardUrl(role));
+}
+
+// Global action handler for buttons
+function go(action, role = "") {
+    switch (action) {
+        case "home":
+            navigateTo("pages/index.html");
+            break;
+        case "register":
+            navigateTo("pages/auth/signup.html");
+            break;
+        case "login":
+            navigateTo("pages/auth/login.html");
+            break;
+        case "userselect":
+        case "patient":
+            navigateTo("pages/auth/patient-login.html");
+            break;
+        case "ambselect":
+        case "ambulance":
+            navigateTo("pages/auth/ambulance-login.html");
+            break;
+        case "hospselect":
+        case "hospital":
+            navigateTo("pages/auth/hospital-login.html");
+            break;
+        case "adminlogin":
+        case "admin":
+            navigateTo("pages/auth/admin-login.html");
+            break;
+        default:
+            console.warn("Unknown navigation action:", action);
+    }
+}
 
 function openPatientPage(page) {
-
-    const allowedPages = [
-        "dashboard.html",
-        "emergency.html",
-        "ambulance.html",
-        "hospitals.html",
-        "vitals.html",
-        "medical-history.html",
-        "family.html",
-        "notifications.html",
-        "profile.html",
-        "settings.html"
-    ];
-
-    if (!allowedPages.includes(page)) {
-        console.error("Invalid patient page:", page);
-        return;
-    }
-
-    window.location.href = "../patient/" + page;
+    navigateTo(`pages/patient/${page}`);
 }
 
-
-/* =========================================================
-   How It Works
-   ========================================================= */
-
-function showHowItWorks() {
-
-    const section = document.getElementById("howItWorks");
-
-    if (section) {
-        section.scrollIntoView({
-            behavior: "smooth"
-        });
-    }
+function openHospitalPage(page) {
+    navigateTo(`pages/hospital/${page}`);
 }
 
-
-/* =========================================================
-   Logout
-   ========================================================= */
-
-function logoutMedra() {
-
-    localStorage.removeItem("medraUser");
-    localStorage.removeItem("medraRole");
-
-    sessionStorage.removeItem("medraAuthenticated");
-    sessionStorage.removeItem("medraRole");
-    sessionStorage.removeItem("medraLoginRole");
-    sessionStorage.removeItem("medraLoginIdentifier");
-
-    sessionStorage.removeItem("medra_access_token");
-    sessionStorage.removeItem("medra_user");
-
-    window.location.href = "../../index.html";
+function openAmbulancePage(page) {
+    navigateTo(`pages/ambulance/${page}`);
 }
 
-
-/* =========================================================
-   Patient Sidebar Navigation
-   ========================================================= */
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    const patientLinks = document.querySelectorAll(
-        ".patient-page .sidebar-nav a"
-    );
-
-    patientLinks.forEach(function (link) {
-
-        const href = link.getAttribute("href");
-
-        if (!href || href === "#") {
-            return;
-        }
-
-        if (
-            href.startsWith("http://") ||
-            href.startsWith("https://")
-        ) {
-            return;
-        }
-
-        link.addEventListener("click", function (event) {
-
-            if (href.startsWith("./")) {
-                event.preventDefault();
-                window.location.href = href;
-            }
-
-        });
-
-    });
-
-});
+function openAdminPage(page) {
+    navigateTo(`pages/admin/${page}`);
+}

@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     MEDRA_JWT_SECRET: str
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "backend/.env"),
         extra="ignore"
     )
 

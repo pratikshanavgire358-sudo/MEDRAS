@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEDRA | Master Administration</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/hospital.css">
+    <link rel="stylesheet" href="../../css/responsive.css">
+
+    <style>
+        .admin-header {
+            background: #06273a;
+            color: #fff;
+            padding: 16px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .metric-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid var(--line, #c9e2dc);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            height: 100%;
+        }
+        .metric-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #10253a;
+            margin: 6px 0 0;
+        }
+        .badge-role {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body class="hospital-page">
+
+    <!-- Top Admin Bar -->
+    <header class="admin-header">
+        <div class="d-flex align-items-center gap-3">
+            <span style="font-size: 28px;">🛡️</span>
+            <div>
+                <h4 class="mb-0 fw-bold">MEDRA Master Administration</h4>
+                <small class="text-white-50">Enterprise Emergency Operations & Governance Command</small>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-success py-2 px-3 fw-bold" id="systemHealthBadge">
+                <i class="bi bi-database-check me-1"></i> PostgreSQL Connected
+            </span>
+
+            <span class="text-white-50 small d-none d-md-inline" id="adminName">Administrator</span>
+
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="toggleTheme()">
+                ☀️ / ☾
+            </button>
+
+            <button type="button" class="btn btn-danger btn-sm" onclick="logoutMedra()">
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container-fluid py-4 px-md-4">
+
+        <!-- Top Metrics Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">REGISTERED USERS</span>
+                        <i class="bi bi-people-fill text-primary fs-4"></i>
+                    </div>
+                    <div class="metric-number" id="metricTotalUsers">0</div>
+                    <div class="small text-muted mt-2" id="metricUsersBreakdown">
+                        Patients: 0 · Staff: 0 · Ambulance: 0
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">EMERGENCY CASES</span>
+                        <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i>
+                    </div>
+                    <div class="metric-number text-danger" id="metricTotalEmergencies">0</div>
+                    <div class="small text-muted mt-2" id="metricEmergenciesBreakdown">
+                        Active: 0 · Resolved: 0
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">AMBULANCE FLEET</span>
+                        <i class="bi bi-truck-front-fill text-success fs-4"></i>
+                    </div>
+                    <div class="metric-number text-success" id="metricTotalAmbulances">0</div>
+                    <div class="small text-muted mt-2" id="metricAmbulanceBreakdown">
+                        Available: 0 · Stationed: Solapur
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">HOSPITAL NETWORK</span>
+                        <i class="bi bi-hospital-fill text-info fs-4"></i>
+                    </div>
+                    <div class="metric-number text-info" id="metricTotalHospitals">0</div>
+                    <div class="small text-muted mt-2">
+                        Trauma Centers Synchronized
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Row: User Management Table -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-person-lines-fill text-primary fs-5"></i>
+                    <h5 class="mb-0 fw-bold">User Directory & RBAC Security</h5>
+                </div>
+                <div class="d-flex gap-2">
+                    <input type="text" id="adminUserSearch" class="form-control form-control-sm" placeholder="Search by name, email, mobile..." style="width: 240px;">
+                    <select id="adminRoleFilter" class="form-select form-select-sm" style="width: 140px;">
+                        <option value="all">All Roles</option>
+                        <option value="patient">Patients</option>
+                        <option value="hospital">Hospital Staff</option>
+                        <option value="ambulance">Ambulance Crew</option>
+                        <option value="admin">Administrators</option>
+                    </select>
+                    <button class="btn btn-outline-secondary btn-sm" id="refreshUsersBtn">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th>User ID</th>
+                            <th>Full Name</th>
+                            <th>Email Address</th>
+                            <th>Mobile</th>
+                            <th>Role</th>
+                            <th>Account Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUsersTableBody" class="small">
+                        <tr><td colspan="7" class="text-center text-muted py-4">Loading user records from PostgreSQL...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Emergency Stream & Audit Trail -->
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-broadcast text-danger me-2"></i>Global Emergency Dispatch Stream</h6>
+                        <span class="badge bg-danger" id="activeEmergencyStreamBadge">Live</span>
+                    </div>
+                    <div class="table-responsive" style="max-height: 340px; overflow-y:auto;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th>Ref</th>
+                                    <th>Type</th>
+                                    <th>Caller</th>
+                                    <th>Unit</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminEmergenciesTableBody" class="small">
+                                <tr><td colspan="5" class="text-center text-muted py-3">Loading emergencies...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-journal-text text-secondary me-2"></i>System Security Audit Logs</h6>
+                        <span class="badge bg-light text-dark border">PostgreSQL (audit_logs)</span>
+                    </div>
+                    <div class="table-responsive" style="max-height: 340px; overflow-y:auto;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Action</th>
+                                    <th>Actor</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminAuditTableBody" class="small">
+                                <tr><td colspan="4" class="text-center text-muted py-3">Loading audit logs...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Scripts -->
+    <script src="../../js/api.js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="../../js/navigation.js"></script>
+    <script src="../../js/admin/dashboard.js"></script>
+</body>
+</html>

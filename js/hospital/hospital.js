@@ -1,241 +1,132 @@
 "use strict";
 
-document.addEventListener("DOMContentLoaded", () => {
+/* ==========================================
+   MEDRA HOSPITAL DASHBOARD CONTROLLER
+   ========================================== */
 
-    // ==========================================
-    // 1. DASHBOARD REFRESH
-    // ==========================================
-
-    const refreshButton = document.getElementById("refreshDashboard");
-
-    if (refreshButton) {
-        refreshButton.addEventListener("click", () => {
-
-            refreshButton.disabled = true;
-            refreshButton.textContent = "Refreshing...";
-
-            window.setTimeout(() => {
-
-                refreshButton.disabled = false;
-                refreshButton.textContent = "Refresh";
-
-                window.alert(
-                    "Demo dashboard refreshed.\n\n" +
-                    "Live hospital data integration is not enabled yet."
-                );
-
-            }, 350);
-        });
+document.addEventListener("DOMContentLoaded", async () => {
+    if (typeof requireRoleAuth === "function" && !requireRoleAuth(["hospital", "admin"])) {
+        return;
     }
 
+    setupMobileSidebar();
+    setupThemeManager();
+    setupRefreshButton();
+    await loadHospitalDashboardData();
+});
 
-    // ==========================================
-    // 2. HOSPITAL PROFILE
-    // ==========================================
+async function loadHospitalDashboardData() {
+    const api = window.MedraAPI;
+    if (!api) return;
 
-    const profileButton = document.getElementById("profileButton");
+    try {
+        const data = await api.get("/api/hospital/dashboard-stats");
 
-    if (profileButton) {
-        profileButton.addEventListener("click", () => {
+        // Staff profile
+        const nameEl = document.getElementById("hospitalName");
+        const roleEl = document.getElementById("hospitalRole");
+        if (nameEl) nameEl.textContent = data.staff_name;
+        if (roleEl) roleEl.textContent = `Hospital Staff · ${data.hospital_name}`;
 
-            window.alert(
-                "Hospital profile settings will be available " +
-                "through the hospital administration module."
-            );
+        // Metrics
+        const m = data.metrics || {};
+        setElementText("totalPatientsCount", m.total_registered_patients);
+        setElementText("pendingVerificationCount", m.pending_verifications);
+        setElementText("activeEmergencyCount", m.active_emergencies);
+        setElementText("emergencyBadge", m.active_emergencies);
+        setElementText("availableBedsCount", m.available_beds);
+        setElementText("occupiedBedsCount", m.occupied_beds);
+        setElementText("totalBedsCount", m.total_beds);
 
-        });
+        // Recent Arrivals Table
+        renderArrivalsTable(data.recent_arrivals || []);
+
+    } catch (err) {
+        console.error("Hospital dashboard load error:", err);
+        if (typeof showNotification === "function") {
+            showNotification(err.message || "Failed to load hospital statistics.", "warning");
+        }
+    }
+}
+
+function setElementText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text !== undefined ? text : "-";
+}
+
+function renderArrivalsTable(arrivals) {
+    const tbody = document.getElementById("emergencyTableBody") || document.querySelector("table tbody");
+    if (!tbody) return;
+
+    if (arrivals.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">No active emergency arrivals at this time.</td></tr>`;
+        return;
     }
 
+    tbody.innerHTML = arrivals.map(a => `
+        <tr>
+            <td><strong>${a.reference}</strong></td>
+            <td>${a.type}</td>
+            <td><span class="badge ${a.priority === 'Critical' ? 'bg-danger' : 'bg-warning text-dark'}">${a.priority}</span></td>
+            <td><span class="badge bg-info text-dark">${a.status}</span></td>
+            <td>${a.ambulance}</td>
+        </tr>
+    `).join("");
+}
 
-    // ==========================================
-    // 3. MOBILE SIDEBAR
-    // ==========================================
+function setupRefreshButton() {
+    const btn = document.getElementById("refreshDashboard");
+    if (btn) {
+        btn.addEventListener("click", async () => {
+            btn.disabled = true;
+            btn.textContent = "Syncing with PostgreSQL...";
+            await loadHospitalDashboardData();
+            btn.disabled = false;
+            btn.textContent = "Refresh";
+            if (typeof showNotification === "function") {
+                showNotification("Hospital dashboard data synchronized with PostgreSQL", "success");
+            }
+        });
+    }
+}
 
+function setupMobileSidebar() {
     const menuButton = document.getElementById("hospitalMenuButton");
     const sidebar = document.querySelector(".hospital-sidebar");
 
     if (menuButton && sidebar) {
-
         menuButton.addEventListener("click", () => {
-
             const isOpen = sidebar.classList.toggle("open");
-
-            menuButton.setAttribute(
-                "aria-expanded",
-                String(isOpen)
-            );
-
+            menuButton.setAttribute("aria-expanded", String(isOpen));
         });
 
+        sidebar.querySelectorAll("a.hospital-nav-link").forEach((link) => {
+            link.addEventListener("click", () => {
+                sidebar.classList.remove("open");
+                menuButton.setAttribute("aria-expanded", "false");
+            });
+        });
     }
 
-
-    // ==========================================
-    // 4. ACTIVE SIDEBAR LINK
-    // ==========================================
-
-    const currentPage = window.location.pathname
-        .split("/")
-        .pop();
-
-    document.querySelectorAll(
-        ".hospital-navigation .nav-link"
-    ).forEach((link) => {
-
-        const linkPage = link.getAttribute("href");
-
-        if (linkPage === currentPage) {
-
+    // Mark active link
+    const current = window.location.pathname.split("/").pop();
+    document.querySelectorAll(".hospital-navigation .hospital-nav-link").forEach(link => {
+        const href = (link.getAttribute("href") || "").split("/").pop();
+        if (href === current) {
             link.classList.add("active");
-
-            link.setAttribute(
-                "aria-current",
-                "page"
-            );
-
-        } else {
-
-            link.classList.remove("active");
-            link.removeAttribute("aria-current");
-
+            link.setAttribute("aria-current", "page");
         }
-
     });
-
-
-    // ==========================================
-    // 5. MEDRAS THEME MANAGER
-    // System / Light / Dark
-    // ==========================================
-// MEDRAS Theme Manager
-const themeSelect = document.getElementById("hospitalThemeSelect");
-
-const THEME_KEY = "medra_theme";
-
-function applyTheme(theme) {
-    let effectiveTheme = theme;
-
-    if (theme === "system") {
-        effectiveTheme = window.matchMedia(
-            "(prefers-color-scheme: dark)"
-        ).matches ? "dark" : "light";
-    }
-
-    document.documentElement.setAttribute(
-        "data-theme",
-        effectiveTheme
-    );
-
-    document.body.setAttribute(
-        "data-theme",
-        effectiveTheme
-    );
-
-    console.log("MEDRAS theme applied:", theme, effectiveTheme);
 }
 
-let savedTheme = "system";
-
-try {
-    const storedTheme = localStorage.getItem(THEME_KEY);
-
-    if (["system", "light", "dark"].includes(storedTheme)) {
-        savedTheme = storedTheme;
-    }
-} catch (error) {
-    console.warn("Unable to read saved theme.");
-}
-
-if (themeSelect) {
-    themeSelect.value = savedTheme;
-
-    themeSelect.addEventListener("change", () => {
-        const selectedTheme = themeSelect.value;
-
-        if (!["system", "light", "dark"].includes(selectedTheme)) {
-            return;
-        }
-
-        try {
-            localStorage.setItem(THEME_KEY, selectedTheme);
-        } catch (error) {
-            console.warn("Unable to save theme.");
-        }
-
-        applyTheme(selectedTheme);
-    });
-} else {
-    console.error("Theme selector not found: hospitalThemeSelect");
-}
-
-const systemTheme = window.matchMedia(
-    "(prefers-color-scheme: dark)"
-);
-
-systemTheme.addEventListener("change", () => {
-    if (themeSelect && themeSelect.value === "system") {
-        applyTheme("system");
-    }
-});
-
-applyTheme(savedTheme);
-
-
-    function saveSelectedTheme(theme) {
-
-        selectedTheme = theme;
-
-        try {
-
-            localStorage.setItem(
-                themeStorageKey,
-                selectedTheme
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "MEDRAS could not save the theme preference."
-            );
-
-        }
-
-        applyHospitalTheme();
-
-    }
-
-
-    // Initialize the saved theme.
-    applyHospitalTheme();
-
-
-    // Handle user selection.
+function setupThemeManager() {
+    const themeSelect = document.getElementById("hospitalThemeSelect");
     if (themeSelect) {
-
+        themeSelect.value = localStorage.getItem("medra_theme") || "system";
         themeSelect.addEventListener("change", () => {
-
-            const newTheme = themeSelect.value;
-
-            if (
-                ["system", "light", "dark"].includes(newTheme)
-            ) {
-
-                saveSelectedTheme(newTheme);
-
+            if (typeof applyTheme === "function") {
+                applyTheme(themeSelect.value);
             }
-
         });
-
     }
-
-
-    // Automatically update when Windows appearance changes.
-    systemThemeQuery.addEventListener("change", () => {
-
-        if (selectedTheme === "system") {
-            applyHospitalTheme();
-        }
-
-    });
-
-});
+}

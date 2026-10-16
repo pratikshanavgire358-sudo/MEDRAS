@@ -2,622 +2,619 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <meta
-        http-equiv="Content-Security-Policy"
-        content="
-        default-src 'self';
-        style-src 'self' 'unsafe-inline' https://unpkg.com;
-        script-src 'self' 'unsafe-inline' https://unpkg.com;
-        img-src 'self' data: https:;
-        connect-src 'self';
-        font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com;
-        "
-    >
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self';
+                   style-src 'self' 'unsafe-inline' https://unpkg.com;
+                   script-src 'self' 'unsafe-inline' https://unpkg.com;
+                   img-src 'self' data: https:;
+                   connect-src 'self';
+                   font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com;">
 
     <title>MedRA | Smart Emergency Response</title>
 
-    <!-- Main MedRA CSS -->
     <link rel="stylesheet" href="../css/style.css">
-
-    <!-- Authentication / Home CSS -->
     <link rel="stylesheet" href="../css/auth.css">
     <link rel="stylesheet" href="../css/responsive.css">
 
+    <style>
+        .hero.hero-background {
+            position: relative;
+            isolation: isolate;
+            min-height: 610px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            padding: clamp(48px, 7vw, 92px) clamp(22px, 7vw, 100px);
+            box-sizing: border-box;
+            color: white;
+            background-color: #06273a;
+            background-image: url("https://images.unsplash.com/photo-1584982751601-97dcc096659c?auto=format&fit=crop&w=2000&q=85");
+            background-size: cover;
+            background-position: center 42%;
+            border-radius: 0 0 28px 28px;
+        }
+
+        .hero-shade {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(
+                90deg,
+                rgba(4, 31, 47, .94),
+                rgba(4, 31, 47, .72)
+            );
+        }
+
+        .hero-background .hero-content {
+            width: min(760px, 100%);
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border: 1px solid rgba(255,255,255,.25);
+            border-radius: 999px;
+            color: #d9fff0;
+            background: rgba(255,255,255,.09);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+        }
+
+        .hero-badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ce2a9;
+        }
+
+        .hero-background h1 {
+            max-width: 760px;
+            margin: 25px 0 18px;
+            color: #fff;
+            font-size: clamp(38px, 5.5vw, 68px);
+            line-height: 1.08;
+            letter-spacing: -1.5px;
+        }
+
+        .hero-background h1 span {
+            display: block;
+            color: #70e5bf;
+        }
+
+        .hero-background .hero-content > p {
+            max-width: 650px;
+            color: #e1edf2;
+            font-size: 16px;
+            line-height: 1.85;
+        }
+
+        .hero-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 13px;
+            margin-top: 28px;
+        }
+
+        .hero-buttons a,
+        .top-actions a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .hero-btn {
+            min-height: 48px;
+            padding: 12px 20px;
+            border-radius: 11px;
+        }
+
+        .hero-btn.primary {
+            color: white;
+            background: linear-gradient(110deg, #06b878, #00a8c8);
+        }
+
+        .hero-btn.secondary {
+            color: white;
+            border: 1px solid rgba(255,255,255,.4);
+            background: rgba(255,255,255,.08);
+        }
+
+        .hero-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 24px;
+            margin-top: 32px;
+            color: #e1edf2;
+            font-size: 12px;
+        }
+
+        .hero-points b {
+            color: #70e5bf;
+        }
+
+        .hero-image-caption {
+            position: absolute;
+            right: 25px;
+            bottom: 25px;
+            padding: 14px 18px;
+            color: white;
+            background: rgba(4,31,47,.82);
+            border: 1px solid rgba(255,255,255,.2);
+            border-radius: 14px;
+        }
+
+        .hero-image-caption strong,
+        .hero-image-caption small {
+            display: block;
+        }
+
+        .hero-image-caption small {
+            margin-top: 5px;
+            color: #d1e5ed;
+        }
+
+        .flip-grid {
+            align-items: stretch;
+        }
+
+        .flip-card {
+            position: relative;
+            display: block;
+            min-width: 0;
+            height: 270px;
+            padding: 0;
+            border: 0;
+            border-radius: 18px;
+            background: transparent;
+            color: inherit;
+            text-align: left;
+            cursor: pointer;
+            perspective: 1000px;
+        }
+
+        .flip-card:focus-visible {
+            outline: 3px solid #00a8c8;
+            outline-offset: 4px;
+        }
+
+        .flip-inner {
+            position: absolute;
+            inset: 0;
+            display: block;
+            transform-style: preserve-3d;
+            transition: transform .6s ease;
+        }
+
+        .flip-card.is-flipped .flip-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-front,
+        .flip-back {
+            position: absolute;
+            inset: 0;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 23px;
+            overflow: hidden;
+            border: 1px solid var(--line, #c9e2dc);
+            border-radius: 18px;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .flip-front {
+            background: var(--surface, #fff);
+        }
+
+        .feature-icon {
+            margin-bottom: 14px;
+            font-size: 28px;
+        }
+
+        .card-index {
+            margin-bottom: 9px;
+            color: var(--green, #06b878);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .flip-front strong,
+        .flip-back strong {
+            font-size: 17px;
+            line-height: 1.4;
+        }
+
+        .feature-summary {
+            margin-top: 9px;
+            color: var(--muted, #587084);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .flip-hint {
+            margin-top: auto;
+            padding-top: 12px;
+            color: var(--green, #06b878);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .flip-back {
+            transform: rotateY(180deg);
+            justify-content: center;
+            color: white;
+            background: var(--nav, #06273a);
+        }
+
+        .flip-back .back-label {
+            margin-bottom: 13px;
+            color: #70e5bf;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .flip-back p {
+            color: #d9e9ef;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .feature-note {
+            max-width: 850px;
+            margin: 24px auto;
+            color: var(--muted, #587084);
+            font-size: 12px;
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        @media (max-width: 760px) {
+            .hero.hero-background {
+                min-height: 620px;
+                padding: 55px 23px 120px;
+                background-position: 58% center;
+            }
+
+            .hero-image-caption {
+                right: 15px;
+                bottom: 15px;
+                left: 15px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .hero-background h1 {
+                font-size: 36px;
+            }
+
+            .hero-buttons {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .hero-buttons a {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .hero-points {
+                flex-direction: column;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .flip-inner {
+                transition: none;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
-
-    <header class="topbar">
-
-        <div class="brand">
-
-            <div class="logo">
-                +
-            </div>
-
-            <div>
-                <strong>MedRA</strong>
-                <small>Smart Emergency Response</small>
-            </div>
-
+<header class="topbar">
+    <div class="brand">
+        <div class="logo">+</div>
+        <div>
+            <strong>MedRA</strong>
+            <small>Smart Emergency Response</small>
         </div>
+    </div>
 
-
-        <div class="top-actions">
-
-            <button
-                class="theme"
+    <div class="top-actions">
+        <button class="theme"
                 id="themeButton"
                 type="button"
-            >
-                ☀️
-            </button>
+                aria-label="Toggle theme">☀️</button>
 
-            <button
-                class="btn ghost"
-                type="button"
-                onclick="goToLogin()"
-            >
-                Login
-            </button>
+        <!-- These paths assume login.html and signup.html are beside index.html. -->
+       <a class="btn ghost" href="auth/login.html">Login</a>
+<a class="btn" href="auth/signup.html">Get Started</a>
+    </div>
+</header>
 
-            <button
-                class="btn"
-                type="button"
-                onclick="goToSignup()"
-            >
-                Get Started
-            </button>
+<main>
+    <section class="hero hero-background" id="home">
+        <div class="hero-shade"></div>
 
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                SMART EMERGENCY RESPONSE
+            </div>
+
+            <h1>
+                Faster Response.
+                <span>Safer Journeys.</span>
+                Better Coordinated Care.
+            </h1>
+
+            <p>
+                MedRA is a smart emergency-response project designed to
+                connect patients, ambulance teams and hospitals through
+                one coordinated digital healthcare platform.
+            </p>
+
+            <div class="hero-buttons">
+                <a class="hero-btn primary" href="signup.html">
+                    Get Started <span aria-hidden="true">→</span>
+                </a>
+
+                <a class="hero-btn secondary" href="#howItWorks">
+                    Discover How It Works ↓
+                </a>
+            </div>
+
+            <div class="hero-points">
+                <span><b>01</b> Patient-centred</span>
+                <span><b>02</b> Emergency coordination</span>
+                <span><b>03</b> Connected healthcare</span>
+            </div>
         </div>
 
-    </header>
-
-
-    <!-- =====================================================
-         HOME
-    ====================================================== -->
-
-    <main>
-
-        <!-- HERO -->
-
-        <section class="hero">
-
-            <div class="hero-content">
-
-                <div class="hero-badge">
-                    🚑 Smart Emergency Response
-                </div>
-
-                <h1>
-                    Faster Response.
-                    <span>Safer Roads.</span>
-                    Better Healthcare.
-                </h1>
-
-                <p>
-                    MedRA connects patients, ambulances,
-                    hospitals and emergency services through
-                    one intelligent emergency response system.
-                </p>
-
-
-                <div class="hero-buttons">
-
-                    <button
-                        class="btn hero-btn"
-                        onclick="goToSignup()"
-                    >
-                        Get Started →
-                    </button>
-
-                    <button
-                        class="btn ghost hero-btn"
-                        onclick="showHowItWorks()"
-                    >
-                        ▶ Watch How It Works
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <!-- Emergency visual -->
-
-            <div class="hero-visual">
-
-                <div class="emergency-card">
-
-                    <div class="emergency-icon">
-                        🚑
-                    </div>
-
-                    <div>
-
-                        <strong>
-                            Emergency Response
-                        </strong>
-
-                        <span>
-                            Connected & Active
-                        </span>
-
-                    </div>
-
-                    <div class="status-dot"></div>
-
-                </div>
-
-
-                <div class="route-line"></div>
-
-
-                <div class="hero-network">
-
-                    <div class="network-node">
-                        👤
-                        <span>Patient</span>
-                    </div>
-
-                    <div class="network-node">
-                        🚑
-                        <span>Ambulance</span>
-                    </div>
-
-                    <div class="network-node">
-                        🏥
-                        <span>Hospital</span>
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             FEATURES
-        ================================================== -->
-
-        <section class="section">
-
-            <div class="section-heading">
-
-                <span class="section-label">
-                    WHY MEDRA
-                </span>
-
-                <h2>
-                    One Connected Emergency Ecosystem
-                </h2>
-
-                <p>
-                    Bringing emergency response teams,
-                    healthcare providers and patients
-                    together in real time.
-                </p>
-
-            </div>
-
-
-            <div class="feature-grid">
-
-                <div class="feature-card">
-
-                    <div class="feature-icon">
-                        🚨
-                    </div>
-
-                    <h3>
-                        Emergency SOS
-                    </h3>
-
-                    <p>
-                        Quickly trigger an emergency
-                        response and share essential
-                        information.
-                    </p>
-
-                </div>
-
-
-                <div class="feature-card">
-
-                    <div class="feature-icon">
-                        🚑
-                    </div>
-
-                    <h3>
-                        Smart Ambulance
-                    </h3>
-
-                    <p>
-                        Connect ambulances with live
-                        location, patient information
-                        and emergency routing.
-                    </p>
-
-                </div>
-
-
-                <div class="feature-card">
-
-                    <div class="feature-icon">
-                        🏥
-                    </div>
-
-                    <h3>
-                        Hospital Coordination
-                    </h3>
-
-                    <p>
-                        Help hospitals prepare resources
-                        before the patient arrives.
-                    </p>
-
-                </div>
-
-
-                <div class="feature-card">
-
-                    <div class="feature-icon">
-                        📡
-                    </div>
-
-                    <h3>
-                        Live Monitoring
-                    </h3>
-
-                    <p>
-                        Monitor emergency vehicles,
-                        vitals and system events in
-                        real time.
-                    </p>
-
-                </div>
-
-
-                <div class="feature-card">
-
-                    <div class="feature-icon">
-                        🚦
-                    </div>
-
-                    <h3>
-                        Green Corridor
-                    </h3>
-
-                    <p>
-                        Coordinate traffic signals to
-                        support faster emergency
-                        transportation.
-                    </p>
-
-                </div>
-
-
-                <div class="feature-card">
-
-                    <div class="feature-icon">
-                        🔐
-                    </div>
-
-                    <h3>
-                        Secure Healthcare
-                    </h3>
-
-                    <p>
-                        Role-based access, consent and
-                        audit capabilities protect
-                        sensitive information.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             HOW IT WORKS
-        ================================================== -->
-
-        <section
-            class="section how-section"
-            id="howItWorks"
-        >
-
-            <div class="section-heading">
-
-                <span class="section-label">
-                    HOW IT WORKS
-                </span>
-
-                <h2>
-                    From Emergency to Care
-                </h2>
-
-            </div>
-
-
-            <div class="steps">
-
-                <div class="step">
-
-                    <div class="step-number">
-                        01
-                    </div>
-
-                    <h3>
-                        Emergency Created
-                    </h3>
-
-                    <p>
-                        Patient or authorized user
-                        initiates an emergency request.
-                    </p>
-
-                </div>
-
-
-                <div class="step">
-
-                    <div class="step-number">
-                        02
-                    </div>
-
-                    <h3>
-                        Ambulance Assigned
-                    </h3>
-
-                    <p>
-                        An available ambulance receives
-                        the emergency request.
-                    </p>
-
-                </div>
-
-
-                <div class="step">
-
-                    <div class="step-number">
-                        03
-                    </div>
-
-                    <h3>
-                        Hospital Prepared
-                    </h3>
-
-                    <p>
-                        Hospital resources can be
-                        prepared before arrival.
-                    </p>
-
-                </div>
-
-
-                <div class="step">
-
-                    <div class="step-number">
-                        04
-                    </div>
-
-                    <h3>
-                        Patient Arrives
-                    </h3>
-
-                    <p>
-                        Emergency teams coordinate the
-                        patient's arrival and treatment.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             WHO CAN USE
-        ================================================== -->
-
-        <section class="section">
-
-            <div class="section-heading">
-
-                <span class="section-label">
-                    MEDRA USERS
-                </span>
-
-                <h2>
-                    One Platform. Multiple Roles.
-                </h2>
-
-            </div>
-
-
-            <div class="role-grid">
-
-                <div class="role-card">
-
-                    <div class="role-icon">
-                        👤
-                    </div>
-
-                    <h3>
-                        Patient / User
-                    </h3>
-
-                    <p>
-                        Emergency SOS, profile,
-                        medical history and family.
-                    </p>
-
-                </div>
-
-
-                <div class="role-card">
-
-                    <div class="role-icon">
-                        🚑
-                    </div>
-
-                    <h3>
-                        Ambulance
-                    </h3>
-
-                    <p>
-                        Driver Mode, EV Doctor Mode,
-                        patient vitals and routing.
-                    </p>
-
-                </div>
-
-
-                <div class="role-card">
-
-                    <div class="role-icon">
-                        🏥
-                    </div>
-
-                    <h3>
-                        Hospital
-                    </h3>
-
-                    <p>
-                        Patient queue, resources,
-                        ER staff and emergency
-                        preparation.
-                    </p>
-
-                </div>
-
-
-                <div class="role-card">
-
-                    <div class="role-icon">
-                        🛡️
-                    </div>
-
-                    <h3>
-                        Master Admin
-                    </h3>
-
-                    <p>
-                        System monitoring, users,
-                        emergency management and
-                        security audit.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             SECURITY
-        ================================================== -->
-
-        <section class="security-section">
-
-            <div>
-
-                <span class="section-label">
-                    PRIVACY & SECURITY
-                </span>
-
-                <h2>
-                    Designed for Sensitive
-                    Emergency Information
-                </h2>
-
-                <p>
-                    MedRA is designed around role-based
-                    access, authentication, consent,
-                    secure communication and auditability.
-                </p>
-
-            </div>
-
-
-            <div class="security-items">
-
-                <div>
-                    🔐
-                    <strong>RBAC</strong>
-                    <span>Role-based access</span>
-                </div>
-
-                <div>
-                    📝
-                    <strong>Audit Logs</strong>
-                    <span>Track important actions</span>
-                </div>
-
-                <div>
-                    🔒
-                    <strong>Secure APIs</strong>
-                    <span>Backend-controlled access</span>
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
-
-
-    <!-- =====================================================
-         FOOTER
-    ====================================================== -->
-
-    <footer class="footer">
-
-        <div class="brand">
-
-            <div class="logo">
-                +
-            </div>
-
-            <div>
-                <strong>MedRA</strong>
-                <small>
-                    Smart Emergency Response
-                </small>
-            </div>
-
+        <div class="hero-image-caption">
+            <strong>✚ One connected platform</strong>
+            <small>Patient · Ambulance · Hospital</small>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-heading">
+            <span class="section-label">WHY MEDRA</span>
+            <h2>One Connected Emergency Ecosystem</h2>
+            <p>
+                Bringing emergency response teams, healthcare providers
+                and patients together in one coordinated platform.
+            </p>
         </div>
 
-        <p>
-            © 2026 MedRA. Smart Emergency Response System.
+        <div class="feature-grid flip-grid">
+            <button class="feature-card flip-card" type="button" aria-pressed="false">
+                <span class="flip-inner">
+                    <span class="flip-front">
+                        <span class="feature-icon">🚨</span>
+                        <span class="card-index">01 / RESPONSE</span>
+                        <strong>Emergency SOS</strong>
+                        <span class="feature-summary">A streamlined emergency request workflow.</span>
+                        <span class="flip-hint">Tap to explore ↗</span>
+                    </span>
+                    <span class="flip-back">
+                        <span class="back-label">MEDRA SPECIALTY</span>
+                        <strong>Emergency SOS</strong>
+                        <p>Designed for an authenticated user to submit an emergency request and receive a reference for follow-up.</p>
+                    </span>
+                </span>
+            </button>
+
+            <button class="feature-card flip-card" type="button" aria-pressed="false">
+                <span class="flip-inner">
+                    <span class="flip-front">
+                        <span class="feature-icon">🚑</span>
+                        <span class="card-index">02 / MOBILITY</span>
+                        <strong>Ambulance Coordination</strong>
+                        <span class="feature-summary">Ambulance availability and assignments.</span>
+                        <span class="flip-hint">Tap to explore ↗</span>
+                    </span>
+                    <span class="flip-back">
+                        <span class="back-label">MEDRA SPECIALTY</span>
+                        <strong>Ambulance Coordination</strong>
+                        <p>Supports availability, assignment and status updates when connected services are configured.</p>
+                    </span>
+                </span>
+            </button>
+
+            <button class="feature-card flip-card" type="button" aria-pressed="false">
+                <span class="flip-inner">
+                    <span class="flip-front">
+                        <span class="feature-icon">🏥</span>
+                        <span class="card-index">03 / CARE NETWORK</span>
+                        <strong>Hospital Coordination</strong>
+                        <span class="feature-summary">Organised hospital information and emergency management.</span>
+                        <span class="flip-hint">Tap to explore ↗</span>
+                    </span>
+                    <span class="flip-back">
+                        <span class="back-label">MEDRA SPECIALTY</span>
+                        <strong>Hospital Coordination</strong>
+                        <p>A dedicated hospital portal can support emergency queues, patient information and resource management.</p>
+                    </span>
+                </span>
+            </button>
+
+            <button class="feature-card flip-card" type="button" aria-pressed="false">
+                <span class="flip-inner">
+                    <span class="flip-front">
+                        <span class="feature-icon">🩺</span>
+                        <span class="card-index">04 / PATIENT DATA</span>
+                        <strong>Patient Health Records</strong>
+                        <span class="feature-summary">A structured view of relevant patient information.</span>
+                        <span class="flip-hint">Tap to explore ↗</span>
+                    </span>
+                    <span class="flip-back">
+                        <span class="back-label">MEDRA SPECIALTY</span>
+                        <strong>Patient Health Records</strong>
+                        <p>Organises profile information and supported health-record features with appropriate access controls.</p>
+                    </span>
+                </span>
+            </button>
+
+            <button class="feature-card flip-card" type="button" aria-pressed="false">
+                <span class="flip-inner">
+                    <span class="flip-front">
+                        <span class="feature-icon">📡</span>
+                        <span class="card-index">05 / CONNECTIVITY</span>
+                        <strong>Emergency Information Flow</strong>
+                        <span class="feature-summary">Information flow across emergency-care roles.</span>
+                        <span class="flip-hint">Tap to explore ↗</span>
+                    </span>
+                    <span class="flip-back">
+                        <span class="back-label">MEDRA SPECIALTY</span>
+                        <strong>Connected Information</strong>
+                        <p>Designed to share relevant emergency information with authorised patient, ambulance and hospital workflows.</p>
+                    </span>
+                </span>
+            </button>
+
+            <button class="feature-card flip-card" type="button" aria-pressed="false">
+                <span class="flip-inner">
+                    <span class="flip-front">
+                        <span class="feature-icon">🔐</span>
+                        <span class="card-index">06 / TRUST</span>
+                        <strong>Security &amp; Access</strong>
+                        <span class="feature-summary">Authentication and role-based access.</span>
+                        <span class="flip-hint">Tap to explore ↗</span>
+                    </span>
+                    <span class="flip-back">
+                        <span class="back-label">MEDRA SPECIALTY</span>
+                        <strong>Security &amp; Access</strong>
+                        <p>Authenticated API requests and role permissions must be verified through testing.</p>
+                    </span>
+                </span>
+            </button>
+        </div>
+
+        <p class="feature-note">
+            Live GPS, automatic allocation and external health-record integrations
+            are active only if their services are implemented and verified.
         </p>
+    </section>
 
-    </footer>
+    <section class="section how-section" id="howItWorks">
+        <div class="section-heading">
+            <span class="section-label">HOW IT WORKS</span>
+            <h2>From Emergency to Care</h2>
+        </div>
 
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">01</div>
+                <h3>Emergency Created</h3>
+                <p>Patient or authorised user initiates an emergency request.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">02</div>
+                <h3>Ambulance Assigned</h3>
+                <p>An available ambulance receives the emergency request.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">03</div>
+                <h3>Hospital Prepared</h3>
+                <p>Hospital resources can be prepared before arrival.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">04</div>
+                <h3>Patient Arrives</h3>
+                <p>Emergency teams coordinate the patient's arrival and treatment.</p>
+            </div>
+        </div>
+    </section>
 
-    <!-- =====================================================
-         JAVASCRIPT
-    ====================================================== -->
+    <section class="section">
+        <div class="section-heading">
+            <span class="section-label">MEDRA USERS</span>
+            <h2>One Platform. Multiple Roles.</h2>
+        </div>
 
-    <script src="../js/common.js"></script>
-    <script src="../js/navigation.js"></script>
+        <div class="role-grid">
+            <div class="role-card">
+                <div class="role-icon">👤</div>
+                <h3>Patient / User</h3>
+                <p>Emergency SOS, profile, medical history and family.</p>
+            </div>
+            <div class="role-card">
+                <div class="role-icon">🚑</div>
+                <h3>Ambulance</h3>
+                <p>Driver mode, patient vitals and routing.</p>
+            </div>
+            <div class="role-card">
+                <div class="role-icon">🏥</div>
+                <h3>Hospital</h3>
+                <p>Patient queue, resources and emergency preparation.</p>
+            </div>
+            <div class="role-card">
+                <div class="role-icon">🛡️</div>
+                <h3>Master Admin</h3>
+                <p>System monitoring, users and emergency management.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="security-section">
+        <div>
+            <span class="section-label">PRIVACY &amp; SECURITY</span>
+            <h2>Designed for Sensitive Emergency Information</h2>
+            <p>
+                MedRA is designed around role-based access, authentication,
+                consent, secure communication and auditability.
+            </p>
+        </div>
+
+        <div class="security-items">
+            <div>🔐 <strong>RBAC</strong><span>Role-based access</span></div>
+            <div>📝 <strong>Audit Logs</strong><span>Track important actions</span></div>
+            <div>🔒 <strong>Secure APIs</strong><span>Backend-controlled access</span></div>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <div class="brand">
+        <div class="logo">+</div>
+        <div><strong>MedRA</strong><small>Smart Emergency Response</small></div>
+    </div>
+    <p>© <span id="currentYear">2026</span> MedRA. Smart Emergency Response System.</p>
+</footer>
+
+<script src="../js/common.js"></script>
+<script src="../js/navigation.js"></script>
+<script src="../js/home.js"></script>
+
+<script>
+"use strict";
+
+document.querySelectorAll(".flip-card").forEach(function (card) {
+    card.addEventListener("click", function () {
+        const isFlipped = card.classList.toggle("is-flipped");
+        card.setAttribute("aria-pressed", String(isFlipped));
+    });
+});
+
+const yearElement = document.getElementById("currentYear");
+if (yearElement) {
+    yearElement.textContent = new Date().getFullYear();
+}
+</script>
 
 </body>
 </html>

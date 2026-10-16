@@ -4,10 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEDRA | Patient Portal Login</title>
 
-    <title>MEDRA | Patient Login</title>
-
-    <!-- MEDRA Stylesheets -->
     <link rel="stylesheet" href="../../css/style.css">
     <link rel="stylesheet" href="../../css/auth.css">
     <link rel="stylesheet" href="../../css/responsive.css">
@@ -20,31 +18,33 @@
 
             <!-- Back Button -->
             <div class="appbar">
-                <button
-                    type="button"
-                    class="btn ghost"
-                    onclick="window.location.href='login.html'">
-                    ← Back
+                <button type="button" class="btn ghost" onclick="window.location.href='login.html'">
+                    ← Back to Role Selection
+                </button>
+                <button type="button" class="theme" onclick="toggleTheme()">
+                    ☾ Dark
                 </button>
             </div>
 
             <!-- Login Header -->
             <header class="auth-header">
                 <div class="auth-icon">👤</div>
-
-                <h1>Patient Login</h1>
-
-                <p>
-                    Sign in securely to access your MEDRA patient dashboard.
-                </p>
+                <h1>Patient Portal Login</h1>
+                <p>Sign in to your MEDRA patient dashboard, SOS system & medical profile.</p>
             </header>
+
+            <!-- Demo autofill -->
+            <div style="background: var(--surface2, #eef8f5); border: 1px solid var(--line, #c9e2dc); border-radius: 10px; padding: 12px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size: 12px; color: var(--muted);">Avishkar Demo Account</span>
+                <button type="button" class="btn ghost" style="font-size: 11px; padding: 4px 10px;" onclick="fillPatientDemo()">
+                    ⚡ Auto-Fill Patient
+                </button>
+            </div>
 
             <!-- Login Form -->
             <form id="loginForm">
-
                 <div class="field">
-                    <label for="email">Email Address</label>
-
+                    <label for="email">Patient Email Address</label>
                     <input
                         type="email"
                         id="email"
@@ -56,7 +56,6 @@
 
                 <div class="field">
                     <label for="password">Password</label>
-
                     <input
                         type="password"
                         id="password"
@@ -67,37 +66,27 @@
                 </div>
 
                 <!-- Login Error Message -->
-                <p
-                    id="loginError"
-                    class="error"
-                    role="alert"
-                    aria-live="polite"
-                    hidden>
-                </p>
+                <p id="loginError" class="error" role="alert" aria-live="polite" hidden></p>
 
                 <!-- Login Button -->
-                <button
-                    type="submit"
-                    class="btn full"
-                    id="loginButton">
-                    Login to MEDRA →
+                <button type="submit" class="btn full" id="loginButton">
+                    Sign In to Patient Portal →
                 </button>
-
             </form>
 
             <!-- Registration Link -->
             <p style="text-align: center; margin-top: 20px;">
-                New to MEDRA?
-                <a href="signup.html" class="green">
-                    Create an account
-                </a>
+                New patient to MEDRA?
+                <a href="signup.html" class="green">Create an account</a>
             </p>
 
         </section>
     </main>
 
     <!-- JavaScript -->
+    <script src="../../js/api.js"></script>
     <script src="../../js/common.js"></script>
+    <script src="../../js/navigation.js"></script>
     <script src="../../js/auth/patient-login.js"></script>
 
 </body>

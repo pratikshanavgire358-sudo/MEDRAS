@@ -9,6 +9,7 @@ from sqlalchemy import (
     Boolean,
     func,
 )
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 
@@ -41,6 +42,8 @@ class DemoMedicalRecord(Base):
         nullable=False,
     )
 
+    user = relationship("User")
+
 
 class Emergency(Base):
     __tablename__ = "emergencies"
@@ -72,6 +75,9 @@ class Emergency(Base):
         nullable=False,
     )
 
+    user = relationship("User")
+    assignment = relationship("EmergencyAssignment", back_populates="emergency", uselist=False)
+
 
 class Ambulance(Base):
     __tablename__ = "ambulances"
@@ -86,6 +92,13 @@ class Ambulance(Base):
 
     driver_name = Column(String(100), nullable=False)
 
+    driver_user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=True,
+        index=True
+    )
+
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
 
@@ -94,6 +107,9 @@ class Ambulance(Base):
         nullable=False,
         default="AVAILABLE",
     )
+
+    driver_user = relationship("User")
+    assignments = relationship("EmergencyAssignment", back_populates="ambulance")
 
 
 class Hospital(Base):
@@ -107,11 +123,16 @@ class Hospital(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
 
+    phone = Column(String(30), nullable=True)
+    email = Column(String(255), nullable=True)
+
     emergency_available = Column(
         Boolean,
         nullable=False,
         default=True,
     )
+
+    assignments = relationship("EmergencyAssignment", back_populates="hospital")
 
 
 class EmergencyAssignment(Base):
@@ -138,8 +159,27 @@ class EmergencyAssignment(Base):
         nullable=False,
     )
 
+    status = Column(
+        String(30),
+        nullable=False,
+        default="ASSIGNED",
+    )
+
+    notes = Column(Text, nullable=True)
+
     assigned_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
     )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    emergency = relationship("Emergency", back_populates="assignment")
+    ambulance = relationship("Ambulance", back_populates="assignments")
+    hospital = relationship("Hospital", back_populates="assignments")

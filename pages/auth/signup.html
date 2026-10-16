@@ -135,9 +135,7 @@
              FORM
         ======================================= -->
 
-        <form
-            id="signupForm"
-            onsubmit="event.preventDefault(); validateRegistration();">
+        <form id="signupForm">
 
 
             <!-- ----------------------------------
@@ -155,63 +153,60 @@
                 <!-- Full Name -->
 
                 <div class="field">
+    <label for="fullName">Full Name</label>
 
-                    <label for="fullName">
-                        Full Name
-                    </label>
-
-                    <input
-                        type="text"
-                        id="fullName"
-                        name="fullName"
-                        placeholder="Enter your full name"
-                        autocomplete="name">
-
-                </div>
-
+    <input
+        type="text"
+        id="fullName"
+        name="fullName"
+        placeholder="Enter your full name"
+        autocomplete="name"
+        minlength="3"
+        maxlength="100"
+        pattern="[A-Za-z][A-Za-z .'-]*"
+        title="Use letters, spaces, apostrophes, hyphens, or periods. Start with a letter."
+        required>
+</div>
 
 
                 <!-- Email -->
 
                 <div class="field">
+    <label for="email">Email Address</label>
 
-                    <label for="email">
-                        Email Address
-                    </label>
-
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="Enter your email"
-                        autocomplete="email">
-
-                </div>
-
+    <input
+        type="email"
+        id="email"
+        name="email"
+        placeholder="Enter your email"
+        autocomplete="email"
+        maxlength="254"
+        required>
+</div>
 
 
                 <!-- Mobile -->
 
                 <div class="field">
+    <label for="mobile">Mobile Number</label>
 
-                    <label for="mobile">
-                        Mobile Number
-                    </label>
+    <input
+        type="tel"
+        id="mobile"
+        name="mobile"
+        placeholder="10-digit mobile number"
+        inputmode="numeric"
+        minlength="10"
+        maxlength="10"
+        pattern="[6-9][0-9]{9}"
+        autocomplete="tel"
+        title="Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9."
+        required>
 
-                    <input
-                        type="tel"
-                        id="mobile"
-                        name="mobile"
-                        placeholder="10-digit mobile number"
-                        maxlength="10"
-                        autocomplete="tel">
-
-                    <div class="hint">
-                        Enter a valid 10-digit Indian mobile number.
-                    </div>
-
-                </div>
-
+    <div class="hint">
+        Enter a 10-digit Indian mobile number.
+    </div>
+</div>
 
 
                 <!-- Role -->
@@ -230,16 +225,16 @@
                             Select account type
                         </option>
 
-                        <option value="patient">
+                        <option value="patient" selected>
                             Patient
                         </option>
 
-                        <option value="family">
-                            Family Member
+                        <option value="hospital">
+                            Hospital Staff
                         </option>
 
-                        <option value="vehicle">
-                            Vehicle User
+                        <option value="ambulance">
+                            Ambulance Driver / Paramedic
                         </option>
 
                     </select>
@@ -265,44 +260,37 @@
                 <!-- Password -->
 
                 <div class="field">
+    <label for="password">Password</label>
 
-                    <label for="password">
-                        Password
-                    </label>
+    <input
+        type="password"
+        id="password"
+        name="password"
+        placeholder="Create a password"
+        autocomplete="new-password"
+        minlength="8"
+        maxlength="128"
+        required>
 
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Create a password"
-                        autocomplete="new-password">
+    <div class="hint">
+        At least 8 characters, including a letter and a number.
+    </div>
+</div>
 
-                    <div class="hint">
-                        Minimum 8 characters.
-                    </div>
+<div class="field">
+    <label for="confirmPassword">Confirm Password</label>
 
-                </div>
+    <input
+        type="password"
+        id="confirmPassword"
+        name="confirmPassword"
+        placeholder="Re-enter password"
+        autocomplete="new-password"
+        minlength="8"
+        maxlength="128"
+        required>
+</div>
 
-
-
-                <!-- Confirm Password -->
-
-                <div class="field">
-
-                    <label for="confirmPassword">
-                        Confirm Password
-                    </label>
-
-                    <input
-                        type="password"
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        placeholder="Re-enter password"
-                        autocomplete="new-password">
-
-                </div>
-
-            </div>
 
 
 
@@ -391,8 +379,9 @@
      JAVASCRIPT
 ========================================== -->
 
+<script src="../../js/api.js"></script>
 <script src="../../js/common.js"></script>
-
+<script src="../../js/navigation.js"></script>
 <script src="../../js/auth/signup.js"></script>
 
 

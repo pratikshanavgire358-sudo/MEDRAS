@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+        style-src 'self';
+        script-src 'self';
+        img-src 'self' data:;
+        connect-src 'self' http://127.0.0.1:8000 http://localhost:8000;"
+    >
+
+    <title>MEDRA | Patient Registration</title>
+
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/hospital.css">
+        <link rel="stylesheet" href="../../css/hospital_registration.css">
+
+
+</head>
+
+<body class="hospital-page">
+
+<div class="hospital-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="hospital-sidebar" id="hospitalSidebar">
+
+        <a class="hospital-brand" href="dashboard.html">
+            <span class="brand-symbol">M</span>
+            <span>
+                <strong>MEDRA</strong>
+                <small>Hospital Network</small>
+            </span>
+        </a>
+
+        <div class="hospital-profile">
+            <div class="hospital-avatar">H</div>
+            <div>
+                <strong id="hospitalName">Hospital Portal</strong>
+                <span>Registration Staff</span>
+            </div>
+        </div>
+
+        <div class="sidebar-heading">OVERVIEW</div>
+
+        <nav class="hospital-navigation">
+
+            <a href="dashboard.html" class="hospital-nav-link">
+                <span class="nav-icon">▦</span>
+                Dashboard
+            </a>
+
+            <div class="sidebar-heading">PATIENT OPERATIONS</div>
+
+            <a href="hospital_emergency.html" class="hospital-nav-link">
+                <span class="nav-icon">✚</span>
+                Emergency Arrivals
+            </a>
+
+            <a
+                href="hospital_registration.html"
+                class="hospital-nav-link active"
+                aria-current="page"
+            >
+                <span class="nav-icon">＋</span>
+                Patient Registration
+            </a>
+
+            <a href="hospital_verification.html" class="hospital-nav-link">
+                <span class="nav-icon">✓</span>
+                Patient Verification
+            </a>
+
+            <a href="hospital_patients.html" class="hospital-nav-link">
+                <span class="nav-icon">♙</span>
+                Patient Search
+            </a>
+
+            <div class="sidebar-heading">DATA COLLECTION</div>
+
+            <a href="hospital-data-collection.html" class="hospital-nav-link">
+                <span class="nav-icon">▤</span>
+                Patient Data
+            </a>
+
+            <a href="hospital-medical-history.html" class="hospital-nav-link">
+                <span class="nav-icon">▧</span>
+                Medical History
+            </a>
+
+            <a href="hospital-documents.html" class="hospital-nav-link">
+                <span class="nav-icon">▣</span>
+                Documents
+            </a>
+
+            <a href="hospital-allergies.html" class="hospital-nav-link">
+                <span class="nav-icon">!</span>
+                Allergies
+            </a>
+
+            <a href="hospital-medications.html" class="hospital-nav-link">
+                <span class="nav-icon">⊕</span>
+                Medications
+            </a>
+
+            <a href="hospital-vitals.html" class="hospital-nav-link">
+                <span class="nav-icon">♡</span>
+                Vitals
+            </a>
+
+            <div class="sidebar-heading">ADMINISTRATION</div>
+
+            <a href="hospital-staff.html" class="hospital-nav-link">
+                <span class="nav-icon">♧</span>
+                Staff Management
+            </a>
+
+            <a href="hospital-medical-resources.html" class="hospital-nav-link">
+                <span class="nav-icon">▥</span>
+                Medical Resources
+            </a>
+
+            <a href="hospital-history.html" class="hospital-nav-link">
+                <span class="nav-icon">◷</span>
+                Activity History
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            <span class="system-indicator"></span>
+            MEDRA Interface
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="hospital-main">
+
+        <header class="hospital-topbar">
+
+            <button
+                type="button"
+                class="menu-toggle"
+                id="hospitalMenuButton"
+                aria-label="Toggle navigation"
+                aria-expanded="false"
+            >☰</button>
+
+            <div class="topbar-heading">
+                <span class="breadcrumb">MEDRA / Patient Operations</span>
+                <h1>Patient Registration</h1>
+            </div>
+
+            <div class="topbar-actions">
+
+                <div class="theme-control">
+                    <label for="hospitalThemeSelect">Appearance</label>
+                    <select id="hospitalThemeSelect" class="theme-select">
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+
+                <div class="profile-button">
+                    <span class="profile-avatar">R</span>
+                    <span class="profile-details">
+                        <strong>Registration Staff</strong>
+                        <small>Hospital Operations</small>
+                    </span>
+                </div>
+
+            </div>
+        </header>
+
+
+        <section class="hospital-content">
+
+            <div class="welcome-section">
+                <div>
+                    <p class="eyebrow">PATIENT OPERATIONS</p>
+                    <h2>Register a Patient</h2>
+                    <p>
+                        Record patient details and arrival information
+                        for hospital registration.
+                    </p>
+                </div>
+
+                <a href="hospital-patients.html" class="primary-button">
+                    Search Existing Patient
+                </a>
+            </div>
+
+
+            <div class="demo-notice">
+                <span class="notice-icon">i</span>
+                <div>
+                    <strong>Frontend preview</strong>
+                    <p>
+                        This form currently validates entries in your
+                        browser. It does not save records to the database.
+                    </p>
+                </div>
+            </div>
+
+
+            <div class="registration-layout">
+
+                <!-- REGISTRATION FORM -->
+                <section class="panel-section registration-form-panel">
+
+                    <div class="section-heading">
+                        <div>
+                            <h2>Patient Information</h2>
+                            <p>Enter the available registration details.</p>
+                        </div>
+                    </div>
+
+                    <form id="registrationForm" novalidate>
+
+                        <div class="form-section-title">
+                            01 — Personal Information
+                        </div>
+
+                        <div class="hospital-form-grid">
+
+                            <div class="form-field">
+                                <label for="firstName">First Name *</label>
+                                <input
+                                    type="text"
+                                    id="firstName"
+                                    name="firstName"
+                                    maxlength="80"
+                                    autocomplete="given-name"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-field">
+                                <label for="lastName">Last Name *</label>
+                                <input
+                                    type="text"
+                                    id="lastName"
+                                    name="lastName"
+                                    maxlength="80"
+                                    autocomplete="family-name"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-field">
+                                <label for="dateOfBirth">Date of Birth</label>
+                                <input
+                                    type="date"
+                                    id="dateOfBirth"
+                                    name="dateOfBirth"
+                                >
+                            </div>
+
+                            <div class="form-field">
+                                <label for="gender">Gender</label>
+                                <select id="gender" name="gender">
+                                    <option value="">Select</option>
+                                    <option value="female">Female</option>
+                                    <option value="male">Male</option>
+                                    <option value="other">Other</option>
+                                    <option value="undisclosed">Prefer not to say</option>
+                                </select>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="phone">Contact Number</label>
+                                <input
+                                    type="tel"
+                                    id="phone"
+                                    name="phone"
+                                    inputmode="tel"
+                                    maxlength="20"
+                                    autocomplete="tel"
+                                >
+                            </div>
+
+                            <div class="form-field">
+                                <label for="email">Email Address</label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    maxlength="254"
+                                    autocomplete="email"
+                                >
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-section-title">
+                            02 — Arrival Information
+                        </div>
+
+                        <div class="hospital-form-grid">
+
+                            <div class="form-field">
+                                <label for="arrivalType">Arrival Type *</label>
+                                <select
+                                    id="arrivalType"
+                                    name="arrivalType"
+                                    required
+                                >
+                                    <option value="">Select arrival type</option>
+                                    <option value="emergency">Emergency</option>
+                                    <option value="routine">Routine</option>
+                                    <option value="referral">Referral</option>
+                                </select>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="arrivalMethod">Arrival Method</label>
+                                <select id="arrivalMethod" name="arrivalMethod">
+                                    <option value="">Select method</option>
+                                    <option value="ambulance">Ambulance</option>
+                                    <option value="private_vehicle">Private Vehicle</option>
+                                    <option value="walk_in">Walk-in</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="arrivalDate">Arrival Date *</label>
+                                <input
+                                    type="date"
+                                    id="arrivalDate"
+                                    name="arrivalDate"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-field">
+                                <label for="arrivalTime">Arrival Time *</label>
+                                <input
+                                    type="time"
+                                    id="arrivalTime"
+                                    name="arrivalTime"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-field">
+                                <label for="priority">Initial Priority</label>
+                                <select id="priority" name="priority">
+                                    <option value="unassessed">Not assessed</option>
+                                    <option value="routine">Routine</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+
+                                <small>
+                                    This is an initial recorded priority,
+                                    not a clinical triage assessment.
+                                </small>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="referralSource">Referral Source</label>
+                                <input
+                                    type="text"
+                                    id="referralSource"
+                                    name="referralSource"
+                                    maxlength="150"
+                                    placeholder="Optional"
+                                >
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-section-title">
+                            03 — Registration Notes
+                        </div>
+
+                        <div class="form-field">
+                            <label for="registrationNotes">
+                                Notes
+                            </label>
+
+                            <textarea
+                                id="registrationNotes"
+                                name="registrationNotes"
+                                rows="4"
+                                maxlength="1000"
+                                placeholder="Enter relevant administrative notes."
+                            ></textarea>
+                        </div>
+
+
+                        <div class="form-checkbox">
+                            <input
+                                type="checkbox"
+                                id="informationConfirmed"
+                                name="informationConfirmed"
+                                required
+                            >
+
+                            <label for="informationConfirmed">
+                                I have reviewed the information entered
+                                and confirmed that it is accurate to the
+                                best of my knowledge.
+                            </label>
+                        </div>
+
+
+                        <div
+                            id="registrationMessage"
+                            class="form-message"
+                            role="status"
+                            aria-live="polite"
+                            hidden
+                        ></div>
+
+
+                        <div class="form-actions">
+
+                            <button
+                                type="reset"
+                                class="secondary-button"
+                                id="resetRegistration"
+                            >
+                                Clear Form
+                            </button>
+
+                            <button
+                                type="submit"
+                                class="primary-button"
+                                id="submitRegistration"
+                            >
+                                Preview Registration
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </section>
+
+
+                <!-- SIDE INFORMATION -->
+                <aside class="registration-side">
+
+                    <section class="panel-section">
+
+                        <h2 class="side-panel-title">Registration Steps</h2>
+
+                        <div class="workflow-step">
+                            <span class="workflow-number">1</span>
+                            <div>
+                                <strong>Patient details</strong>
+                                <p>Record available personal information.</p>
+                            </div>
+                        </div>
+
+                        <div class="workflow-step">
+                            <span class="workflow-number">2</span>
+                            <div>
+                                <strong>Arrival details</strong>
+                                <p>Record arrival type and time.</p>
+                            </div>
+                        </div>
+
+                        <div class="workflow-step">
+                            <span class="workflow-number">3</span>
+                            <div>
+                                <strong>Verification</strong>
+                                <p>Complete the authorized verification process.</p>
+                            </div>
+                        </div>
+
+                        <div class="workflow-step">
+                            <span class="workflow-number">4</span>
+                            <div>
+                                <strong>Registration confirmation</strong>
+                                <p>Save the registration once the backend is connected.</p>
+                            </div>
+                        </div>
+
+                    </section>
+
+
+                    <section class="panel-section">
+
+                        <div class="side-info-icon">!</div>
+
+                        <h2 class="side-panel-title">Emergency Notice</h2>
+
+                        <p class="side-info-text">
+                            Do not delay emergency treatment because
+                            administrative information is incomplete.
+                            Follow the hospital's emergency procedures.
+                        </p>
+
+                    </section>
+
+                </aside>
+
+            </div>
+
+
+            <!-- FRONTEND PREVIEW RESULTS -->
+            <section class="panel-section preview-panel" id="previewPanel" hidden>
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Registration Preview</h2>
+                        <p>
+                            Review the entered information before backend
+                            integration.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="registrationPreview" class="preview-grid"></div>
+
+                <p class="preview-warning">
+                    This preview is not a saved registration and does
+                    not establish patient identity or verification.
+                </p>
+
+            </section>
+
+
+            <footer class="hospital-footer">
+                <span>MEDRA Smart Emergency Response</span>
+                <span>Patient Registration Interface</span>
+            </footer>
+
+        </section>
+
+    </main>
+
+</div>
+    <script src="../../js/api.js" defer></script>
+    <script src="../../js/common.js" defer></script>
+    <script src="../../js/navigation.js" defer></script>
+    <script src="../../js/hospital/hospital-registration.js" defer></script>
+
+
+</body>
+</html>

@@ -1,130 +1,90 @@
-/* ==========================================
-   MEDRA LOGIN
-   FastAPI + PostgreSQL Authentication
-========================================== */
+/* =========================================================
+   MEDRA Login Handler
+   ========================================================= */
 
-const API_URL = "http://127.0.0.1:8000/api/auth/login";
+"use strict";
+
+const DEMO_CREDENTIALS = {
+    patient: { email: "patient@medra.org", password: "Password@123" },
+    hospital: { email: "hospital@medra.org", password: "Password@123" },
+    ambulance: { email: "ambulance@medra.org", password: "Password@123" },
+    admin: { email: "admin@medra.org", password: "Password@123" }
+};
+
+function fillDemo(role) {
+    const creds = DEMO_CREDENTIALS[role];
+    if (!creds) return;
+    const emailField = document.getElementById("email");
+    const passField = document.getElementById("password");
+    if (emailField) emailField.value = creds.email;
+    if (passField) passField.value = creds.password;
+    if (typeof showNotification === "function") {
+        showNotification(`Filled demo credentials for ${role.toUpperCase()}`, "info");
+    }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("MEDRA login page loaded.");
-
     const loginForm = document.getElementById("loginForm");
     const loginButton = document.getElementById("loginButton");
     const messageBox = document.getElementById("loginMessage");
 
-    if (!loginForm) {
-        console.error(
-            "Login form not found. Check the form ID in login.html."
-        );
-        return;
-    }
-
-    function showMessage(message, type = "danger") {
-        if (!messageBox) {
-            alert(message);
-            return;
-        }
-
-        messageBox.textContent = message;
-        messageBox.className = `alert alert-${type}`;
+    function showMessage(msg, isSuccess = false) {
+        if (!messageBox) return;
+        messageBox.textContent = msg;
         messageBox.style.display = "block";
+        messageBox.style.background = isSuccess ? "rgba(6, 184, 120, 0.12)" : "rgba(239, 69, 84, 0.12)";
+        messageBox.style.color = isSuccess ? "#047857" : "#b91c1c";
+        messageBox.style.border = `1px solid ${isSuccess ? "#06b878" : "#ef4554"}`;
     }
 
-    loginForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const emailInput = document.getElementById("email");
+            const passInput = document.getElementById("password");
 
-        const email =
-            document.getElementById("email")?.value.trim().toLowerCase();
+            const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
+            const password = passInput ? passInput.value : "";
 
-        const password =
-            document.getElementById("password")?.value;
-
-        if (!email || !password) {
-            showMessage("Please enter your email and password.");
-            return;
-        }
-
-        if (loginButton) {
-            loginButton.disabled = true;
-            loginButton.textContent = "Signing in...";
-        }
-
-        try {
-            const response = await fetch(API_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    email: email,
-                    password: password
-                })
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    typeof result.detail === "string"
-                        ? result.detail
-                        : "Login failed. Please check your credentials."
-                );
-            }
-
-            // Store the authentication token and user information.
-            sessionStorage.setItem(
-                "medra_access_token",
-                result.access_token
-            );
-
-            sessionStorage.setItem(
-                "medra_user",
-                JSON.stringify(result.user)
-            );
-
-            showMessage("Login successful!", "success");
-
-            // Update these paths to match your actual dashboard filenames.
-            const dashboards = {
-                patient: "../user/patient-dashboard.html",
-                family: "../user/family-dashboard.html",
-                vehicle: "../user/vehicle-dashboard.html",
-                ambulance: "../ambulance/ambulance-dashboard.html",
-                hospital: "../hospital/hospital-dashboard.html",
-                admin: "../admin/admin-dashboard.html"
-            };
-
-            const role = String(
-                result.user?.role || ""
-            ).toLowerCase();
-
-            const dashboard = dashboards[role];
-
-            if (!dashboard) {
-                showMessage(
-                    "Login succeeded, but no dashboard is configured for your account role.",
-                    "warning"
-                );
+            if (!email || !password) {
+                showMessage("Please enter your registered email and password.");
                 return;
             }
 
-            setTimeout(() => {
-                window.location.href = dashboard;
-            }, 700);
-
-        } catch (error) {
-            console.error("MEDRA login error:", error);
-
-            showMessage(
-                error.message ||
-                "Unable to connect to the MEDRA server."
-            );
-
-        } finally {
             if (loginButton) {
-                loginButton.disabled = false;
-                loginButton.textContent = "Sign In";
+                loginButton.disabled = true;
+                loginButton.textContent = "Verifying Credentials...";
             }
-        }
-    });
+
+            try {
+                const result = await window.MedraAPI.post("/api/auth/login", {
+                    email,
+                    password
+                });
+
+                window.MedraAPI.setAuthSession(result.access_token, result.user);
+                showMessage(`Welcome back, ${result.user.full_name}! Redirecting to ${result.user.role} portal...`, true);
+
+                setTimeout(() => {
+                    const dashboards = {
+                        patient: "../patient/dashboard.html",
+                        hospital: "../hospital/dashboard.html",
+                        ambulance: "../ambulance/dashboard.html",
+                        admin: "../admin/dashboard.html"
+                    };
+
+                    const target = dashboards[result.user.role.toLowerCase()] || "../patient/dashboard.html";
+                    window.location.href = target;
+                }, 800);
+
+            } catch (err) {
+                console.error("Login failure:", err);
+                showMessage(err.message || "Login failed. Check your email and password.");
+                if (loginButton) {
+                    loginButton.disabled = false;
+                    loginButton.textContent = "Sign In to Dashboard →";
+                }
+            }
+        });
+    }
 });
