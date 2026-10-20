@@ -1,20 +1,15 @@
-# Python virtual environments
-.venv/
-venv/
-backend/.venv/
-backend/venv/
-
-# Python cache
-__pycache__/
-*.py[cod]
-
-# Secrets and environment files
+# Environment secrets
 .env
 .env.*
 !.env.example
 
-# VS Code
-.vscode/
+# Python environments and cache
+.venv/
+venv/
+__pycache__/
+*.pyc
 
-# Logs
-*.log
+# Database backups — do not upload
+medra_backup.json
+medra_schema.json
+backup_medra.py

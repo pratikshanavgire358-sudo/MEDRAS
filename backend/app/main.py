@@ -19,6 +19,7 @@ from app.models.medra_demo import (
 from app.models.hospital import HospitalPatient, HospitalResource
 from app.models.vitals import VitalObservation
 from app.models.system import Notification, AuditLog
+from app.models.iot import IOTTelemetry
 
 # Create all tables safely if they do not exist
 Base.metadata.create_all(bind=engine)
@@ -31,6 +32,7 @@ from app.routes.ambulance import router as ambulance_router
 from app.routes.admin import router as admin_router
 from app.routes.abdm import router as abdm_router
 from app.routes.demo import router as demo_router
+from app.routes.iot import router as iot_router, start_mqtt_bridge, stop_mqtt_bridge, start_discovery_broadcast, stop_discovery_broadcast
 
 app = FastAPI(
     title="MEDRA Smart Emergency Response API",
@@ -57,7 +59,7 @@ app.add_middleware(
     ],
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"]
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "X-IoT-Device-Key"]
 )
 
 # Register all module routers
@@ -68,6 +70,21 @@ app.include_router(ambulance_router)
 app.include_router(admin_router)
 app.include_router(abdm_router)
 app.include_router(demo_router)
+app.include_router(iot_router)
+
+
+@app.on_event("startup")
+async def start_iot_services():
+    # MQTT is optional at boot: API remains available if the broker is offline.
+    import asyncio
+    start_mqtt_bridge(asyncio.get_running_loop())
+    start_discovery_broadcast()
+
+
+@app.on_event("shutdown")
+def stop_iot_services():
+    stop_mqtt_bridge()
+    stop_discovery_broadcast()
 
 
 @app.get("/")
@@ -85,6 +102,8 @@ def home():
             "admin": "/api/admin",
             "abdm": "/api/abdm",
             "demo": "/api/demo",
+            "iot_telemetry": "/api/iot/telemetry/latest",
+            "iot_websocket": "/ws/iot",
             "health": "/api/health"
         }
     }

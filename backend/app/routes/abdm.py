@@ -6,6 +6,8 @@ from app.core.database import get_db
 from app.models.user import User
 from app.models.patient_profile import PatientProfile
 from app.core.dependencies import get_current_user
+import json
+from pathlib import Path
 
 router = APIRouter(
     prefix="/api/abdm",
@@ -18,27 +20,6 @@ class AbhaVerificationRequest(BaseModel):
     consent_confirmed: bool = Field(default=False)
 
 
-@router.get("/status")
-def get_abdm_integration_status(user: User = Depends(get_current_user)):
-    return {
-        "gateway": "National Health Authority (NHA) ABDM Sandbox",
-        "connection_state": "INTEGRATION_BOUNDARY_READY",
-        "is_live_production": False,
-        "credentials_configured": False,
-        "mode": "DEMO_SIMULATION_ONLY",
-        "notice": (
-            "Live ABDM (Ayushman Bharat Digital Mission) integration requires official NHA client ID, "
-            "client secret, public encryption keys, and active HIP/HIU bridge registration. "
-            "In this demonstration build, ABHA verification and data exchange are clearly marked as synthetic boundaries."
-        ),
-        "supported_standards": [
-            "FHIR R4 DiagnosticReport",
-            "FHIR R4 MedicationRequest",
-            "M1 / M2 / M3 ABDM Milestones"
-        ]
-    }
-
-
 @router.post("/verify-demo")
 def verify_demo_abha(
     request: AbhaVerificationRequest,
@@ -48,26 +29,83 @@ def verify_demo_abha(
     if not request.consent_confirmed:
         raise HTTPException(
             status_code=400,
-            detail="Patient consent must be acknowledged before processing ABHA verification."
+            detail="Patient consent must be acknowledged before verification."
         )
 
     clean_id = request.abha_number.replace("-", "").strip()
+
     if not clean_id.isdigit() or len(clean_id) != 14:
         raise HTTPException(
             status_code=422,
-            detail="Invalid ABHA format. Expected a 14-digit number (e.g., 91-1234-5678-9012)."
+            detail="Invalid format. Expected a 14-digit demo identifier."
         )
 
-    # In demonstration mode, simulate validation check against sandbox test range
-    profile = db.query(PatientProfile).filter(PatientProfile.user_id == user.id).first()
-    if profile:
-        profile.abha_linked = True
-        db.commit()
+    # Load synthetic patient records.
+    data_file = (
+        Path(__file__).resolve().parents[1]
+        / "data"
+        / "dummy_abha_patients.json"
+    )
 
+    try:
+        with data_file.open("r", encoding="utf-8") as file:
+            patients = json.load(file)
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=500,
+            detail="Demo patient dataset is missing."
+        )
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=500,
+            detail="Demo patient dataset contains invalid JSON."
+        )
+
+    # Match against the demo dataset.
+    demo_patient = next(
+        (
+            patient for patient in patients
+            if patient["abha_number"].replace("-", "") == clean_id
+        ),
+        None
+    )
+
+    if demo_patient is None:
+        return {
+            "mode": "DEMO_MODE",
+            "verified": False,
+            "status": "NOT_FOUND",
+            "notice": "No matching synthetic patient exists in the demo dataset."
+        }
+
+    # Link the logged-in user's own profile.
+    profile = (
+        db.query(PatientProfile)
+        .filter(PatientProfile.user_id == user.id)
+        .first()
+    )
+
+    if profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Patient profile not found for the logged-in user."
+        )
+
+    profile.abha_linked = True
+    db.commit()
+
+    # Do not return medical records during verification.
     return {
         "mode": "DEMO_MODE",
         "verified": True,
-        "abha_number": f"{clean_id[0:2]}-{clean_id[2:6]}-{clean_id[6:10]}-{clean_id[10:14]}",
+        "demo_patient_id": demo_patient["demo_patient_id"],
+        "abha_number": (
+            f"{clean_id[:2]}-{clean_id[2:6]}-"
+            f"{clean_id[6:10]}-{clean_id[10:]}"
+        ),
         "status": "DEMO_LINKED",
-        "notice": "Simulated demonstration link recorded in local PostgreSQL database. Real NHA ABDM consent flow is not active.",
+        "notice": (
+            "Synthetic dataset match successful. "
+            "No real ABDM verification has occurred."
+        )
     }

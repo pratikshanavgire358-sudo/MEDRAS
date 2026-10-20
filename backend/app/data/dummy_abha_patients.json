@@ -1,0 +1,22 @@
+[
+  {
+    "demo_patient_id": "MEDRA-P001",
+    "abha_number": "91-1234-5678-9012",
+    "full_name": "Demo Patient One",
+    "age": 35,
+    "blood_group": "O+",
+    "allergies": ["Penicillin"],
+    "medical_history": ["Hypertension"],
+    "medications": ["Demo Medication A"]
+  },
+  {
+    "demo_patient_id": "MEDRA-P002",
+    "abha_number": "91-2345-6789-0123",
+    "full_name": "Demo Patient Two",
+    "age": 42,
+    "blood_group": "B+",
+    "allergies": [],
+    "medical_history": ["Type 2 diabetes"],
+    "medications": ["Demo Medication B"]
+  }
+]
