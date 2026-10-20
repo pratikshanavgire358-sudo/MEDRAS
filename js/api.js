@@ -2,8 +2,7 @@
    MEDRA Centralized API Client & Session Manager
    ========================================================= */
 
-const API_BASE_URL = "http://127.0.0.1:8000";
-
+const API_BASE_URL = window.MEDRA_API_BASE_URL || "https://medra-backend-9rfy.onrender.com";
 const MedraAPI = {
     baseUrl: API_BASE_URL,
 
