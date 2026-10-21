@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <meta http-equiv="Content-Security-Policy"
-          content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000; object-src 'none'; base-uri 'self'; form-action 'self'">
-    <title>Patient Verification | MEDRA</title>
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               connect-src 'self' https://medra-backend-9rfy.onrender.com http://127.0.0.1:8000 http://localhost:8000;
+               style-src 'self' 'unsafe-inline';
+               script-src 'self';">
+
 
     <link rel="stylesheet" href="../../css/style.css">
     <link rel="stylesheet" href="../../css/hospital.css">
