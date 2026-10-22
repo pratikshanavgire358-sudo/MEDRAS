@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#087f8c">
+<title>MEDRA | ABHA Demo Records</title>
+<style>
+:root{--teal:#087f8c;--ink:#183d50;--muted:#607887;--line:#dce8ee;--bg:#f3f8fb;--white:#fff;--good:#167348;--bad:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:16px/1.5 Arial,sans-serif;color:var(--ink)}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px max(5%,calc((100% - 1100px)/2));background:white;border-bottom:1px solid var(--line)}
+.brand{font-size:23px;font-weight:800;color:var(--teal)}a{color:var(--teal);font-weight:700;text-decoration:none}
+main{max-width:1100px;margin:28px auto;padding:0 18px}.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:800}
+h1{margin:5px 0;color:var(--ink);font-size:clamp(27px,4vw,36px)}h2{font-size:19px;margin:0 0 14px}
+.sub{color:var(--muted);max-width:760px}.badge{display:inline-block;border-radius:99px;padding:5px 10px;background:#fff2d8;color:#855b00;font-size:12px;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:22px}.card{background:white;border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 5px 20px #204b5f0a;min-width:0}.wide{grid-column:1/-1}
+label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}input,select,textarea{width:100%;padding:12px;border:1px solid #cbdbe3;border-radius:9px;font:inherit;background:#fff;color:var(--ink)}input:focus,select:focus,textarea:focus{outline:2px solid #8dd9df;border-color:var(--teal)}
+button{min-height:44px;padding:11px 16px;border:0;border-radius:9px;font-weight:800;cursor:pointer;background:var(--teal);color:white;margin:12px 7px 0 0}button.secondary{background:#e8f2f5;color:#245365}button.danger{background:#fff0ef;color:#a62b25;border:1px solid #f0c5c2}button:disabled{opacity:.6;cursor:wait}
+.note{padding:12px 14px;background:#eef8f9;border-radius:10px;color:#365d68;font-size:13px}.status{margin:14px 0;padding:12px;border-radius:9px;background:#f2f6f8;color:var(--muted);white-space:pre-wrap}.status.ok{background:#e9f8f0;color:var(--good)}.status.err{background:#fff0ef;color:var(--bad)}
+.items{display:grid;gap:10px}.item{border:1px solid var(--line);border-radius:10px;padding:13px}.item strong{display:block;margin-bottom:5px}.small{font-size:13px;color:var(--muted)}.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.record-value{font-weight:700}.empty{color:var(--muted);padding:14px 0}
+@media(max-width:700px){.grid,.cols{grid-template-columns:1fr}.wide{grid-column:auto}header{padding:15px 18px}main{margin:20px auto}.card{padding:17px}}
+</style>
+</head>
+<body>
+<header><div class="brand">MEDRA</div><a href="dashboard.html">← Patient dashboard</a></header>
+<main>
+<div class="eyebrow">Patient health information</div>
+<h1>ABHA & health records</h1>
+<p class="sub">Link a synthetic test identity, view its sample health data, and manage which hospital account may access selected records.</p>
+<p><span class="badge">DEMO MODE · NOT CONNECTED TO LIVE ABDM</span></p>
+<div class="note">All identities and medical details on this page are fictional test data. This module does not verify real ABHA identities or fetch records from ABDM. Use only test accounts.</div>
+<div class="grid">
+<section class="card">
+<h2>1 · Link a demo record</h2>
+<p class="small">Choose a synthetic record from the backend dataset. Linking is associated with your currently logged-in MEDRA account.</p>
+<label for="demoId">Synthetic record</label><select id="demoId"><option value="">Loading demo records…</option></select>
+<label><input id="confirmDemo" type="checkbox" style="width:auto;margin-right:8px">I understand this is a synthetic demo record, not a real ABHA verification.</label>
+<button id="linkBtn">Verify & link demo record</button>
+<div id="linkStatus" class="status" role="status">Checking backend…</div>
+</section>
+<section class="card">
+<h2>2 · Linked profile</h2>
+<div id="linkedProfile" class="empty">Loading linked profile…</div>
+<button class="secondary" id="refreshProfileBtn">Refresh profile</button>
+</section>
+<section class="card wide">
+<h2>3 · Synthetic health records</h2>
+<p class="small">Records are available only after a demo record is linked.</p>
+<div id="records" class="items"><div class="empty">No records loaded.</div></div>
+<button id="loadRecordsBtn">Fetch demo health records</button>
+<div id="recordsStatus" class="status" role="status">Not loaded yet.</div>
+</section>
+<section class="card">
+<h2>4 · Grant hospital access</h2>
+<p class="small">Enter the numeric user ID of an active MEDRA account with the hospital role. The backend validates the role before granting access.</p>
+<label for="hospitalUserId">Hospital staff user ID</label><input id="hospitalUserId" type="number" min="1" step="1" placeholder="e.g. 12">
+<label for="purpose">Purpose</label><input id="purpose" maxlength="250" value="Emergency treatment and care coordination">
+<label for="duration">Access duration</label><select id="duration"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="30">30 days</option><option value="90">90 days</option></select>
+<div class="items">
+<label><input type="checkbox" class="category" value="blood_group" checked style="width:auto;margin-right:8px">Blood group</label>
+<label><input type="checkbox" class="category" value="allergies" checked style="width:auto;margin-right:8px">Allergies</label>
+<label><input type="checkbox" class="category" value="medical_history" checked style="width:auto;margin-right:8px">Medical history</label>
+<label><input type="checkbox" class="category" value="medications" checked style="width:auto;margin-right:8px">Medications</label>
+</div>
+<button id="grantBtn">Grant demo consent</button>
+<div id="consentStatus" class="status" role="status">No consent action performed.</div>
+</section>
+<section class="card">
+<h2>5 · Consent history</h2>
+<div id="consents" class="items"><div class="empty">Loading consents…</div></div>
+<button class="secondary" id="refreshConsentsBtn">Refresh consent history</button>
+</section>
+</div>
+<p class="small" style="margin:22px 0">Production note: live ABDM integration, identity verification, hospital onboarding, consent artefacts and applicable compliance checks are separate work and are not provided by this demo module.</p>
+</main>
+<script src="../../js/api.js"></script>
+<script src="../../js/common.js"></script>
+<script src="../../js/patient/abha.js"></script>
+</body>
+</html>
