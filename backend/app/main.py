@@ -12,6 +12,7 @@ from app.models.patient_profile import PatientProfile
 from app.models.medra_demo import (
     DemoMedicalRecord,
     Emergency,
+    EmergencyAction,
     Ambulance,
     Hospital,
     EmergencyAssignment,
@@ -34,6 +35,7 @@ from app.routes.abdm import router as abdm_router
 from app.routes.demo import router as demo_router
 from app.routes.iot import router as iot_router, start_mqtt_bridge, stop_mqtt_bridge, start_discovery_broadcast, stop_discovery_broadcast
 
+
 app = FastAPI(
     title="MEDRA Smart Emergency Response API",
     description="Backend API for MEDRA — connected emergency response system for Patients, Ambulances, Hospitals, and Administrators.",
@@ -47,6 +49,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_origins=[
+        "https://medra-ui.onrender.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
         "http://localhost:8000",
@@ -54,8 +57,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:8080",
-        "http://127.0.0.1:8080",
-        "*"
+        "http://127.0.0.1:8080"
     ],
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
