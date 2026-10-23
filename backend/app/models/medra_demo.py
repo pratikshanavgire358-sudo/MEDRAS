@@ -8,6 +8,7 @@ from sqlalchemy import (
     Text,
     Boolean,
     func,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -47,6 +48,9 @@ class DemoMedicalRecord(Base):
 
 class Emergency(Base):
     __tablename__ = "emergencies"
+    __table_args__ = (
+        UniqueConstraint("user_id", "idempotency_key", name="uq_emergencies_user_idempotency_key"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
 
@@ -68,6 +72,9 @@ class Emergency(Base):
         nullable=False,
         default="REQUESTED",
     )
+
+    priority = Column(String(12), nullable=False, default="NORMAL", server_default="NORMAL")
+    idempotency_key = Column(String(36), nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),
@@ -107,8 +114,9 @@ class Ambulance(Base):
         nullable=False,
         default="AVAILABLE",
     )
+    location_updated_at = Column(DateTime(timezone=True), nullable=True)
 
-    driver_user = relationship("User")
+    driver_user = relationship("User", foreign_keys=[driver_user_id])
     assignments = relationship("EmergencyAssignment", back_populates="ambulance")
 
 
@@ -156,7 +164,7 @@ class EmergencyAssignment(Base):
     hospital_id = Column(
         Integer,
         ForeignKey("hospitals.id"),
-        nullable=False,
+        nullable=True,
     )
 
     status = Column(
@@ -183,3 +191,17 @@ class EmergencyAssignment(Base):
     emergency = relationship("Emergency", back_populates="assignment")
     ambulance = relationship("Ambulance", back_populates="assignments")
     hospital = relationship("Hospital", back_populates="assignments")
+
+
+class EmergencyAction(Base):
+    __tablename__ = "emergency_actions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    emergency_id = Column(Integer, ForeignKey("emergencies.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    ambulance_id = Column(Integer, ForeignKey("ambulances.id"), nullable=True, index=True)
+    action_type = Column(String(30), nullable=False)
+    previous_value = Column(Text, nullable=True)
+    new_value = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

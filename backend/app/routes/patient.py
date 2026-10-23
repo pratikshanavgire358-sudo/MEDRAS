@@ -2,11 +2,12 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.exc import IntegrityError
 
 from app.core.database import get_db
 from app.models.user import User
 from app.models.patient_profile import PatientProfile
-from app.models.medra_demo import DemoMedicalRecord, Emergency, Ambulance, Hospital, EmergencyAssignment
+from app.models.medra_demo import DemoMedicalRecord, Emergency, EmergencyAction, Ambulance, Hospital, EmergencyAssignment
 from app.models.vitals import VitalObservation
 from app.models.hospital import HospitalResource
 from app.models.system import Notification
@@ -99,63 +100,58 @@ def create_patient_emergency(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_patient),
 ):
-    # Default coordinates fallback to Solapur center if not provided
-    lat = request.latitude if request.latitude is not None else 17.6599
-    lng = request.longitude if request.longitude is not None else 75.9064
+    lat = request.latitude
+    lng = request.longitude
+    idempotency_key = str(request.idempotency_key) if request.idempotency_key else None
+
+    if idempotency_key:
+        existing = db.query(Emergency).filter(
+            Emergency.user_id == user.id,
+            Emergency.idempotency_key == idempotency_key,
+        ).first()
+        if existing:
+            return emergency_response(existing, user)
 
     emergency = Emergency(
         user_id=user.id,
         emergency_type=request.emergency_type,
-        description=request.description or f"Emergency SOS initiated by {user.full_name}",
+        description=request.description or None,
         latitude=lat,
         longitude=lng,
-        status="ASSIGNED",
+        status="REQUESTED",
+        priority="NORMAL",
+        idempotency_key=idempotency_key,
     )
     db.add(emergency)
     db.flush()
+    db.add(EmergencyAction(
+        emergency_id=emergency.id,
+        user_id=user.id,
+        action_type="SOS_CREATED",
+        new_value="REQUESTED",
+    ))
 
-    # Find available ambulance
-    ambulance = db.query(Ambulance).filter(Ambulance.status == "AVAILABLE").first()
-    if not ambulance:
-        ambulance = db.query(Ambulance).first()
-
-    # Find nearest available hospital
-    hospital = db.query(Hospital).filter(Hospital.emergency_available.is_(True)).first()
-    if not hospital:
-        hospital = db.query(Hospital).first()
-
-    assignment = None
-    if ambulance and hospital:
-        assignment = EmergencyAssignment(
-            emergency_id=emergency.id,
-            ambulance_id=ambulance.id,
-            hospital_id=hospital.id,
-            status="ASSIGNED",
-            notes=f"Auto-assigned to {ambulance.vehicle_number} and {hospital.name}"
-        )
-        db.add(assignment)
-        ambulance.status = "DISPATCHED"
-
-    # Create notifications
     notif = Notification(
         user_id=user.id,
         role="patient",
-        title="Emergency Request Dispatched",
-        message=f"Emergency SOS #{emergency.id} received. Ambulance {ambulance.vehicle_number if ambulance else 'Pending'} assigned.",
+        title="Emergency SOS received",
+        message=f"Emergency SOS MEDRA-EMG-{emergency.id:04d} is waiting for an eligible ambulance to accept.",
         type="EMERGENCY"
     )
     db.add(notif)
 
-    # Hospital alert
-    hospital_notif = Notification(
-        role="hospital",
-        title="Incoming Emergency Arrival",
-        message=f"Critical emergency #{emergency.id} ({request.emergency_type}) heading to destination.",
-        type="EMERGENCY"
-    )
-    db.add(hospital_notif)
-
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if idempotency_key:
+            existing = db.query(Emergency).filter(
+                Emergency.user_id == user.id,
+                Emergency.idempotency_key == idempotency_key,
+            ).first()
+            if existing:
+                return emergency_response(existing, user)
+        raise
     db.refresh(emergency)
 
     log_audit(
@@ -164,31 +160,39 @@ def create_patient_emergency(
         resource_type="Emergency",
         user=user,
         resource_id=emergency.id,
-        details=f"Type: {emergency.emergency_type}, Lat: {lat}, Lng: {lng}"
+        details=None
     )
 
+    return emergency_response(emergency, user)
+
+
+def emergency_response(emergency: Emergency, user: User):
+    assignment = emergency.assignment
     return {
-        "message": "Emergency SOS registered and dispatched successfully",
+        "message": (
+            "Emergency SOS registered and waiting for ambulance acceptance"
+            if emergency.status == "REQUESTED"
+            else "Emergency SOS is already registered"
+        ),
         "emergency_id": emergency.id,
         "reference": f"MEDRA-EMG-{emergency.id:04d}",
+        "patient_name": user.full_name,
+        "emergency_type": emergency.emergency_type,
+        "description": emergency.description,
+        "latitude": emergency.latitude,
+        "longitude": emergency.longitude,
         "status": emergency.status,
         "type": emergency.emergency_type,
+        "priority": emergency.priority,
         "ambulance": {
-            "id": ambulance.id,
-            "vehicle_number": ambulance.vehicle_number,
-            "driver_name": ambulance.driver_name,
-            "latitude": ambulance.latitude,
-            "longitude": ambulance.longitude,
-            "status": ambulance.status,
-        } if ambulance else None,
+            "vehicle_number": assignment.ambulance.vehicle_number,
+            "driver_name": assignment.ambulance.driver_name,
+        } if assignment and assignment.ambulance else None,
         "hospital": {
-            "id": hospital.id,
-            "name": hospital.name,
-            "address": hospital.address,
-            "latitude": hospital.latitude,
-            "longitude": hospital.longitude,
-        } if hospital else None,
-        "created_at": emergency.created_at.isoformat() if emergency.created_at else None
+            "name": assignment.hospital.name,
+            "address": assignment.hospital.address,
+        } if assignment and assignment.hospital else None,
+        "created_at": emergency.created_at.isoformat() if emergency.created_at else None,
     }
 
 
@@ -213,6 +217,7 @@ def get_patient_emergencies(
             "emergency_type": emg.emergency_type,
             "description": emg.description,
             "status": emg.status,
+            "priority": emg.priority,
             "latitude": emg.latitude,
             "longitude": emg.longitude,
             "created_at": emg.created_at.isoformat() if emg.created_at else None,
@@ -237,10 +242,7 @@ def get_active_patient_emergency(
 ):
     emergency = (
         db.query(Emergency)
-        .filter(
-            Emergency.user_id == user.id,
-            Emergency.status.in_(["REQUESTED", "ASSIGNED", "EN_ROUTE", "ARRIVED", "TRIAGED"])
-        )
+        .filter(Emergency.user_id == user.id)
         .order_by(desc(Emergency.created_at))
         .first()
     )
@@ -250,15 +252,21 @@ def get_active_patient_emergency(
 
     assignment = emergency.assignment
     return {
-        "has_active": True,
+        "has_active": emergency.status not in ["RESOLVED", "CANCELLED"],
         "emergency": {
             "id": emergency.id,
             "reference": f"MEDRA-EMG-{emergency.id:04d}",
             "emergency_type": emergency.emergency_type,
             "description": emergency.description,
             "status": emergency.status,
+            "priority": emergency.priority,
             "latitude": emergency.latitude,
             "longitude": emergency.longitude,
+            "ambulance_location_updated_at": (
+                assignment.ambulance.location_updated_at.isoformat()
+                if assignment and assignment.ambulance and assignment.ambulance.location_updated_at
+                else None
+            ),
             "created_at": emergency.created_at.isoformat() if emergency.created_at else None,
             "ambulance": {
                 "id": assignment.ambulance.id,
@@ -347,8 +355,24 @@ def record_patient_vitals(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_patient),
 ):
+    active_emergency = None
+    if request.emergency_id is not None:
+        active_emergency = db.query(Emergency).filter(
+            Emergency.id == request.emergency_id,
+            Emergency.user_id == user.id,
+            Emergency.status.in_(["REQUESTED", "ASSIGNED", "ACCEPTED", "EN_ROUTE", "PATIENT_PICKED_UP", "HOSPITAL_ARRIVED"]),
+        ).first()
+        if not active_emergency:
+            raise HTTPException(status_code=404, detail="Active emergency not found for this patient")
+    else:
+        active_emergency = db.query(Emergency).filter(
+            Emergency.user_id == user.id,
+            Emergency.status.in_(["REQUESTED", "ASSIGNED", "ACCEPTED", "EN_ROUTE", "PATIENT_PICKED_UP", "HOSPITAL_ARRIVED"]),
+        ).order_by(desc(Emergency.created_at)).first()
+
     vital = VitalObservation(
         user_id=user.id,
+        emergency_id=active_emergency.id if active_emergency else None,
         heart_rate=request.heart_rate,
         blood_pressure_systolic=request.blood_pressure_systolic,
         blood_pressure_diastolic=request.blood_pressure_diastolic,
@@ -428,8 +452,6 @@ def get_nearby_ambulances(
                 "id": a.id,
                 "vehicle_number": a.vehicle_number,
                 "driver_name": a.driver_name,
-                "latitude": a.latitude,
-                "longitude": a.longitude,
                 "status": a.status,
             }
             for a in ambulances
@@ -444,7 +466,13 @@ def get_patient_notifications(
 ):
     notifs = (
         db.query(Notification)
-        .filter((Notification.user_id == user.id) | (Notification.role == "patient") | (Notification.role.is_(None)))
+        .filter(
+            (Notification.user_id == user.id)
+            | (
+                Notification.user_id.is_(None)
+                & ((Notification.role == "patient") | Notification.role.is_(None))
+            )
+        )
         .order_by(desc(Notification.created_at))
         .limit(15)
         .all()

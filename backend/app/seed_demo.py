@@ -96,6 +96,8 @@ def seed_demo_data():
             db.add(hosp2)
             db.flush()
 
+        hospital_user.hospital_id = hosp1.id
+
         # 3. Demo Ambulances
         amb1 = db.query(Ambulance).filter(Ambulance.vehicle_number == "MH-13-EM-108").first()
         if not amb1:
@@ -111,6 +113,9 @@ def seed_demo_data():
             db.flush()
         else:
             amb1.driver_user_id = ambulance_user.id
+
+        ambulance_user.ambulance_subrole = "EC_DRIVER"
+        ambulance_user.ambulance_id = amb1.id
 
         # 4. Hospital Resources
         if db.query(HospitalResource).count() == 0:
