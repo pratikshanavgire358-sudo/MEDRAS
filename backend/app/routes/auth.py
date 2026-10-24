@@ -14,6 +14,7 @@ from app.core.database import get_db
 from app.models.patient_profile import PatientProfile
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, LoginRequest, FirebaseLoginRequest
+from app.schemas.account import AccountProfileUpdate
 from app.core.dependencies import get_current_user, log_audit
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -332,6 +333,63 @@ def get_current_user_profile(
             })
 
     return profile_data
+
+
+@router.patch("/profile")
+def update_current_user_profile(
+    request: AccountProfileUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    updates = request.model_dump(exclude_unset=True)
+    if "mobile" in updates and updates["mobile"] is not None:
+        mobile_owner = db.query(User.id).filter(
+            User.mobile == updates["mobile"],
+            User.id != user.id,
+        ).first()
+        if mobile_owner:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This mobile number is already associated with another account",
+            )
+
+    for field, value in updates.items():
+        setattr(user, field, value)
+
+    try:
+        db.commit()
+        db.refresh(user)
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The profile update conflicts with another account",
+        ) from error
+    except Exception as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update the account profile",
+        ) from error
+
+    log_audit(
+        db,
+        action="ACCOUNT_PROFILE_UPDATED",
+        resource_type="User",
+        user=user,
+        resource_id=user.id,
+    )
+    return {
+        "message": "Account profile updated",
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "mobile": user.mobile,
+            "role": user.role,
+            **auth_role_fields(user),
+        },
+    }
 
 
 @router.post("/logout")

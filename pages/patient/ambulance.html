@@ -455,8 +455,7 @@
                     </h2>
 
                     <p>
-                        Monitor your assigned ambulance and
-                        estimated arrival time.
+                        View the latest verified emergency and ambulance status.
                     </p>
 
                 </div>
@@ -466,7 +465,7 @@
 
                     <span class="live-dot"></span>
 
-                    Ambulance Live
+                    <span id="trackingLiveBadge">STATUS UPDATES</span>
 
                 </div>
 
@@ -475,7 +474,7 @@
 
 
             <!-- =================================================
-                       ACTIVE EMERGENCY
+                       EMERGENCY STATUS
             ================================================== -->
 
             <div class="ambulance-alert-card">
@@ -493,14 +492,9 @@
                         ACTIVE EMERGENCY
                     </span>
 
-                    <h3>
-                        Ambulance is on the way
-                    </h3>
+                    <h3 id="trackingEmergencyStatus">Loading emergency status...</h3>
 
-                    <p>
-                        Your emergency request has been accepted.
-                        Please remain at your current location.
-                    </p>
+                    <p id="trackingVehicleStatus">Checking the latest saved emergency record.</p>
 
                 </div>
 
@@ -512,7 +506,7 @@
                     </small>
 
                     <strong id="etaValue">
-                        06
+                        --
                     </strong>
 
                     <span>
@@ -547,12 +541,12 @@
 
                                 <i class="bi bi-geo-alt-fill"></i>
 
-                                Live Ambulance Location
+                                Emergency Map
 
                             </h3>
 
                             <p>
-                                Real OpenStreetMap location
+                                Saved patient, current ambulance, and selected hospital locations
                             </p>
 
                         </div>
@@ -576,6 +570,9 @@
                     <div class="real-map-container">
 
                         <div id="ambulanceMap"></div>
+                        <p class="small text-muted px-3 mb-0" id="trackingLocationDisclaimer">
+                            Location timestamps will indicate whether ambulance GPS is fresh. Map lines are approximate straight-line segments, not road navigation.
+                        </p>
 
 
                         <!-- MAP OVERLAY -->
@@ -587,7 +584,7 @@
 
                                 <span class="live-dot"></span>
 
-                                Live Map
+                                Database locations
 
                             </div>
 
@@ -596,7 +593,7 @@
                                 type="button"
                                 class="map-control-btn"
                                 id="myLocationButton"
-                                title="My location">
+                                title="Show my saved emergency location">
 
                                 <i class="bi bi-crosshair"></i>
 
@@ -618,7 +615,7 @@
                             </span>
 
                             <strong id="routeStatus">
-                                Ambulance → Patient → Hospital
+                                Emergency route not available
                             </strong>
 
                         </div>
@@ -685,15 +682,11 @@
                                 Vehicle ID
                             </span>
 
-                            <strong>
-                                AMB-102
-                            </strong>
+                            <strong id="trackingVehicleNumber">Not assigned</strong>
 
                             <small class="vehicle-status">
 
-                                <span></span>
-
-                                En Route
+                                <span id="trackingVehicleSubstatus">Waiting for ambulance assignment</span>
 
                             </small>
 
@@ -722,9 +715,7 @@
                                     Driver
                                 </span>
 
-                                <strong>
-                                    Emergency Response Team
-                                </strong>
+                                <strong id="trackingDriverName">Not assigned</strong>
 
                             </div>
 
@@ -748,7 +739,7 @@
                                 </span>
 
                                 <strong id="distanceValue">
-                                    Calculating...
+                                    Unavailable
                                 </strong>
 
                             </div>
@@ -775,7 +766,7 @@
                                 <strong>
 
                                     <span id="detailEta">
-                                        6
+                                        Unavailable
                                     </span>
 
                                     minutes
@@ -804,7 +795,7 @@
                                 </span>
 
                                 <strong id="speedValue">
-                                    42 km/h
+                                    Unavailable
                                 </strong>
 
                             </div>
@@ -1075,8 +1066,7 @@
                         </h4>
 
                         <p>
-                            City Civil Hospital is currently selected
-                            as the emergency destination.
+                            <span id="trackingHospital">Not selected</span>
                         </p>
 
                     </div>

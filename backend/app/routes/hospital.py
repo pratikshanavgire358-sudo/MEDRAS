@@ -1,68 +1,168 @@
 from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, or_, func
 
 from app.core.database import get_db
+from app.core.dependencies import get_current_hospital_staff, log_audit
 from app.models.user import User
 from app.models.hospital import HospitalPatient, HospitalResource
-from app.models.medra_demo import Emergency, Ambulance, Hospital, EmergencyAssignment
+from app.models.medra_demo import (
+    Emergency,
+    Ambulance,
+    Hospital,
+    EmergencyAction,
+    EmergencyAssignment,
+)
 from app.models.system import AuditLog, Notification
 from app.schemas.hospital_ops import (
     HospitalPatientCreate,
     HospitalPatientVerify,
     HospitalResourceUpdate,
-    EmergencyStatusUpdate,
-)
-from app.core.dependencies import get_current_hospital_staff, log_audit
+    EmergencyStatusUpdate,)
 
 router = APIRouter(
     prefix="/api/hospital",
-    tags=["Hospital Portal"]
+    tags=["Hospital Portal"],
 )
 
+HOSPITAL_INCOMING_STATUSES = (
+    "HOSPITAL_SELECTED",
+    "HOSPITAL_ACCEPTED",
+    "HOSPITAL_ARRIVED",
+    "HOSPITAL_RECEIVED",
+)
+
+# Valid transitions for the hospital's emergency workflow.
+ALLOWED_HOSPITAL_TRANSITIONS = {
+    "HOSPITAL_SELECTED": {"HOSPITAL_ACCEPTED"},
+    "HOSPITAL_ACCEPTED": {"HOSPITAL_ARRIVED"},
+    "HOSPITAL_ARRIVED": {"HOSPITAL_RECEIVED"},
+    "HOSPITAL_RECEIVED": {"RESOLVED"},
+}
+
+
+def get_hospital_scope(user: User) -> int | None:
+    """
+    Return the hospital ID assigned to a hospital staff member.
+
+    Admin accounts have network-wide scope.
+    """
+    if user.role == "admin":
+        return None
+
+    if user.hospital_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hospital staff account is not assigned to a hospital",
+        )
+
+    return user.hospital_id
+
+
+def get_emergency_reference(emergency_id: int) -> str:
+    return f"MEDRA-EMG-{emergency_id:04d}"
+
+
+def get_patient_reference(patient_id: int) -> str:
+    return f"MEDRA-PAT-{patient_id:04d}"
+
+
+# =========================================================
+# HOSPITAL DASHBOARD
+# =========================================================
 
 @router.get("/dashboard-stats")
 def get_hospital_dashboard_stats(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_hospital_staff),
 ):
-    total_patients = db.query(HospitalPatient).count()
-    pending_verifications = db.query(HospitalPatient).filter(
+    hospital_id = get_hospital_scope(user)
+
+    patient_query = db.query(HospitalPatient)
+    resource_query = db.query(HospitalResource)
+    emergency_query = db.query(Emergency)
+
+    if hospital_id is not None:
+        patient_query = patient_query.filter(
+            HospitalPatient.hospital_id == hospital_id
+        )
+
+        resource_query = resource_query.filter(
+            HospitalResource.hospital_id == hospital_id
+        )
+
+        emergency_query = (
+            emergency_query
+            .join(EmergencyAssignment)
+            .filter(EmergencyAssignment.hospital_id == hospital_id)
+        )
+
+    total_patients = patient_query.count()
+
+    pending_verifications = patient_query.filter(
         HospitalPatient.verification_status == "Pending review"
     ).count()
 
-    active_emergencies = db.query(Emergency).filter(
-        Emergency.status.in_(["REQUESTED", "ASSIGNED", "EN_ROUTE", "ARRIVED", "TRIAGED"])
+    active_emergencies = emergency_query.filter(
+        Emergency.status.in_(HOSPITAL_INCOMING_STATUSES)
     ).count()
 
-    resources = db.query(HospitalResource).all()
-    total_beds = sum(r.total_count for r in resources) if resources else 45
-    occupied_beds = sum(r.occupied_count for r in resources) if resources else 28
+    resources = resource_query.all()
+
+    total_beds = sum(resource.total_count for resource in resources)
+    occupied_beds = sum(resource.occupied_count for resource in resources)
     available_beds = max(0, total_beds - occupied_beds)
 
     recent_emergencies = (
-        db.query(Emergency)
+        emergency_query
+        .filter(Emergency.status.in_(HOSPITAL_INCOMING_STATUSES))
         .order_by(desc(Emergency.created_at))
         .limit(5)
         .all()
     )
 
     emergency_list = []
-    for emg in recent_emergencies:
-        assignment = emg.assignment
+
+    for emergency in recent_emergencies:
+        assignment = emergency.assignment
+
         emergency_list.append({
-            "id": emg.id,
-            "reference": f"MEDRA-EMG-{emg.id:04d}",
-            "type": emg.emergency_type,
-            "status": emg.status,
-            "priority": "Critical" if emg.status in ["REQUESTED", "ASSIGNED"] else "High",
-            "ambulance": assignment.ambulance.vehicle_number if assignment and assignment.ambulance else "Unassigned",
-            "created_at": emg.created_at.isoformat() if emg.created_at else None
+            "id": emergency.id,
+            "reference": get_emergency_reference(emergency.id),
+            "type": emergency.emergency_type,
+            "status": emergency.status,
+            "priority": emergency.priority,
+            "ambulance": (
+                assignment.ambulance.vehicle_number
+                if assignment and assignment.ambulance
+                else "Unassigned"
+            ),
+            "created_at": (
+                emergency.created_at.isoformat()
+                if emergency.created_at
+                else None
+            ),
         })
 
+    hospital = None
+
+    if hospital_id is not None:
+        hospital = (
+            db.query(Hospital)
+            .filter(Hospital.id == hospital_id)
+            .first()
+        )
+
+    occupancy_percentage = (
+        round(occupied_beds / total_beds * 100, 1)
+        if total_beds > 0
+        else 0
+    )
+
     return {
-        "hospital_name": "Solapur District Emergency & Trauma Center",
+        "hospital_name": hospital.name if hospital else "Hospital Network",
         "staff_name": user.full_name,
         "staff_role": user.role,
         "metrics": {
@@ -72,62 +172,135 @@ def get_hospital_dashboard_stats(
             "total_beds": total_beds,
             "occupied_beds": occupied_beds,
             "available_beds": available_beds,
-            "bed_occupancy_percentage": round((occupied_beds / total_beds * 100) if total_beds > 0 else 0, 1),
+            "bed_occupancy_percentage": occupancy_percentage,
         },
-        "recent_arrivals": emergency_list
+        "recent_arrivals": emergency_list,
     }
 
 
+# =========================================================
+# HOSPITAL EMERGENCIES
+# =========================================================
+
 @router.get("/emergencies")
 def get_hospital_emergencies(
-    priority: str | None = None,
-    status_filter: str | None = None,
-    search: str | None = None,
+    priority: str | None = Query(default=None),
+    status_filter: str | None = Query(default=None),
+    search: str | None = Query(default=None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_hospital_staff),
 ):
-    query = db.query(Emergency).order_by(desc(Emergency.created_at))
+    hospital_id = get_hospital_scope(user)
 
-    if status_filter and status_filter != "all":
-        query = query.filter(Emergency.status == status_filter)
+    query = (
+        db.query(Emergency)
+        .join(EmergencyAssignment)
+    )
 
-    emergencies = query.all()
+    if hospital_id is not None:
+        query = query.filter(
+            EmergencyAssignment.hospital_id == hospital_id
+        )
+
+    query = query.filter(
+        Emergency.status.in_(HOSPITAL_INCOMING_STATUSES)
+    )
+
+    if status_filter and status_filter.lower() != "all":
+        query = query.filter(
+            Emergency.status == status_filter.upper()
+        )
+
+    if priority and priority.lower() != "all":
+        query = query.filter(
+            Emergency.priority == priority.upper()
+        )
+
+    emergencies = (
+        query
+        .order_by(desc(Emergency.created_at))
+        .all()
+    )
+
+    search_term = search.strip().lower() if search else None
     results = []
 
-    for emg in emergencies:
-        assignment = emg.assignment
-        patient = emg.user
+    for emergency in emergencies:
+        assignment = emergency.assignment
+        patient = emergency.user
 
         item = {
-            "id": emg.id,
-            "reference": f"MEDRA-EMG-{emg.id:04d}",
-            "type": emg.emergency_type,
-            "priority": "Critical" if emg.status in ["REQUESTED", "ASSIGNED"] else "High",
-            "status": emg.status,
-            "description": emg.description,
-            "latitude": emg.latitude,
-            "longitude": emg.longitude,
-            "patient_name": patient.full_name if patient else "Anonymous / Emergency",
-            "patient_mobile": patient.mobile if patient else "Not provided",
-            "ambulance_vehicle": assignment.ambulance.vehicle_number if assignment and assignment.ambulance else "En route search",
-            "ambulance_driver": assignment.ambulance.driver_name if assignment and assignment.ambulance else "Pending",
-            "created_at": emg.created_at.isoformat() if emg.created_at else None,
+            "id": emergency.id,
+            "reference": get_emergency_reference(emergency.id),
+            "type": emergency.emergency_type,
+            "priority": emergency.priority,
+            "status": emergency.status,
+            "description": emergency.description,
+            "latitude": emergency.latitude,
+            "longitude": emergency.longitude,
+            "patient_name": (
+                patient.full_name
+                if patient
+                else "Anonymous / Emergency"
+            ),
+            "patient_mobile": (
+                patient.mobile
+                if patient and patient.mobile
+                else "Not provided"
+            ),
+            "ambulance_vehicle": (
+                assignment.ambulance.vehicle_number
+                if assignment and assignment.ambulance
+                else "Unassigned"
+            ),
+            "ambulance_driver": (
+                assignment.ambulance.driver_name
+                if assignment and assignment.ambulance
+                else "Pending"
+            ),
+            "created_at": (
+                emergency.created_at.isoformat()
+                if emergency.created_at
+                else None
+            ),
+            "ambulance_location_updated_at": (
+                assignment.ambulance.location_updated_at.isoformat()
+                if (
+                    assignment
+                    and assignment.ambulance
+                    and assignment.ambulance.location_updated_at
+                )
+                else None
+            ),
         }
 
-        if search:
-            s = search.lower()
-            if not (
-                s in item["reference"].lower()
-                or s in item["type"].lower()
-                or s in item["patient_name"].lower()
-                or s in item["status"].lower()
+        if search_term:
+            searchable_fields = (
+                item["reference"],
+                item["type"] or "",
+                item["patient_name"],
+                item["status"],
+                item["patient_mobile"],
+                item["ambulance_vehicle"],
+            )
+
+            if not any(
+                search_term in str(value).lower()
+                for value in searchable_fields
             ):
                 continue
 
         results.append(item)
 
-    return {"emergencies": results, "total": len(results)}
+    return {
+        "emergencies": results,
+        "total": len(results),
+    }
 
+
+# =========================================================
+# UPDATE EMERGENCY STATUS
+# =========================================================
 
 @router.patch("/emergencies/{emergency_id}/status")
 def update_emergency_status(
@@ -136,24 +309,97 @@ def update_emergency_status(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_hospital_staff),
 ):
-    emergency = db.query(Emergency).filter(Emergency.id == emergency_id).first()
+    hospital_id = get_hospital_scope(user)
+
+    emergency_query = db.query(Emergency).filter(
+        Emergency.id == emergency_id
+    )
+
+    # Restrict hospital staff to emergencies assigned to their hospital.
+    if hospital_id is not None:
+        emergency_query = (
+            emergency_query
+            .join(EmergencyAssignment)
+            .filter(EmergencyAssignment.hospital_id == hospital_id)
+        )
+
+    emergency = emergency_query.with_for_update().first()
+
     if not emergency:
-        raise HTTPException(status_code=404, detail="Emergency record not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Emergency record not found or not assigned to this hospital",
+        )
 
-    old_status = emergency.status
-    emergency.status = request.status
+    assignment = emergency.assignment
 
-    if emergency.assignment:
-        emergency.assignment.status = request.status
+    if not assignment:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Emergency has no hospital assignment",
+        )
+
+    requested_status = request.status.strip().upper()
+    old_status = assignment.status
+
+    allowed_next_statuses = ALLOWED_HOSPITAL_TRANSITIONS.get(
+        old_status,
+        set(),
+    )
+
+    if requested_status not in allowed_next_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Invalid hospital status transition: "
+                f"{old_status} to {requested_status}"
+            ),
+        )
+
+    try:
+        assignment.status = requested_status
+        emergency.status = requested_status
+
         if request.notes:
-            emergency.assignment.notes = request.notes
+            assignment.notes = request.notes.strip()
 
-    # If marked resolved, free up ambulance
-    if request.status in ["RESOLVED", "CANCELLED"] and emergency.assignment and emergency.assignment.ambulance:
-        emergency.assignment.ambulance.status = "AVAILABLE"
+        if (
+            requested_status == "RESOLVED"
+            and assignment.ambulance is not None
+        ):
+            assignment.ambulance.status = "AVAILABLE"
 
-    db.commit()
-    db.refresh(emergency)
+        db.add(
+            EmergencyAction(
+                emergency_id=emergency.id,
+                user_id=user.id,
+                ambulance_id=assignment.ambulance_id,
+                action_type="STATUS_UPDATED",
+                previous_value=old_status,
+                new_value=requested_status,
+                notes=request.notes,
+            )
+        )
+
+        db.add(
+            Notification(
+                user_id=emergency.user_id,
+                role="patient",
+                title="Emergency status updated",
+                message=(
+                    f"Emergency {get_emergency_reference(emergency.id)} "
+                    f"is now {requested_status}."
+                ),
+                type="EMERGENCY",
+            )
+        )
+
+        db.commit()
+        db.refresh(emergency)
+
+    except Exception:
+        db.rollback()
+        raise
 
     log_audit(
         db,
@@ -161,88 +407,153 @@ def update_emergency_status(
         resource_type="Emergency",
         user=user,
         resource_id=emergency.id,
-        details=f"Status changed from {old_status} to {request.status}. Notes: {request.notes}"
+        details=(
+            f"Status changed from {old_status} to {requested_status}. "
+            f"Notes: {request.notes or ''}"
+        ),
     )
 
     return {
-        "message": f"Emergency status updated to {request.status}",
+        "message": f"Emergency status updated to {requested_status}",
         "id": emergency.id,
-        "status": emergency.status
+        "status": emergency.status,
     }
 
 
+# =========================================================
+# REGISTERED HOSPITAL PATIENTS
+# =========================================================
+
 @router.get("/patients")
 def get_hospital_patients(
-    query: str | None = None,
-    status_filter: str | None = None,
-    arrival_filter: str | None = None,
+    query: str | None = Query(default=None),
+    status_filter: str | None = Query(default=None),
+    arrival_filter: str | None = Query(default=None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_hospital_staff),
 ):
-    q = db.query(HospitalPatient).order_by(desc(HospitalPatient.created_at))
+    hospital_id = get_hospital_scope(user)
 
-    if status_filter and status_filter != "all":
-        q = q.filter(HospitalPatient.status == status_filter)
+    patient_query = db.query(HospitalPatient)
 
-    if arrival_filter and arrival_filter != "all":
-        q = q.filter(HospitalPatient.arrival_type == arrival_filter)
+    if hospital_id is not None:
+        patient_query = patient_query.filter(
+            HospitalPatient.hospital_id == hospital_id
+        )
 
-    patients = q.all()
+    if status_filter and status_filter.lower() != "all":
+        patient_query = patient_query.filter(
+            HospitalPatient.status == status_filter
+        )
+
+    if arrival_filter and arrival_filter.lower() != "all":
+        patient_query = patient_query.filter(
+            HospitalPatient.arrival_type == arrival_filter
+        )
+
+    patients = (
+        patient_query
+        .order_by(desc(HospitalPatient.created_at))
+        .all()
+    )
+
     results = []
+    search_term = query.strip().lower() if query else None
 
-    for p in patients:
-        reference = f"MEDRA-PAT-{p.id:04d}"
-        full_name = f"{p.first_name} {p.last_name}"
+    for patient in patients:
+        reference = get_patient_reference(patient.id)
+        full_name = f"{patient.first_name} {patient.last_name}".strip()
 
-        if query:
-            match = (
-                query.lower() in reference.lower()
-                or query.lower() in full_name.lower()
-                or (p.phone and query in p.phone)
-                or (p.email and query.lower() in p.email.lower())
+        if search_term:
+            searchable_fields = (
+                reference,
+                full_name,
+                patient.phone or "",
+                patient.email or "",
             )
-            if not match:
+
+            if not any(
+                search_term in str(value).lower()
+                for value in searchable_fields
+            ):
                 continue
 
         results.append({
-            "id": p.id,
+            "id": patient.id,
             "reference": reference,
             "name": full_name,
-            "first_name": p.first_name,
-            "last_name": p.last_name,
-            "date_of_birth": p.date_of_birth.isoformat() if p.date_of_birth else None,
-            "gender": p.gender,
-            "phone": p.phone or "Not provided",
-            "email": p.email or "Not provided",
-            "arrival_type": p.arrival_type,
-            "arrival_method": p.arrival_method,
-            "arrival_date": p.arrival_date,
-            "arrival_time": p.arrival_time,
-            "priority": p.priority,
-            "referral_source": p.referral_source,
-            "notes": p.notes,
-            "verification_status": p.verification_status,
-            "verified_at": p.verified_at.isoformat() if p.verified_at else None,
-            "status": p.status,
-            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "first_name": patient.first_name,
+            "last_name": patient.last_name,
+            "date_of_birth": (
+                patient.date_of_birth.isoformat()
+                if patient.date_of_birth
+                else None
+            ),
+            "gender": patient.gender,
+            "phone": patient.phone or "Not provided",
+            "email": patient.email or "Not provided",
+            "arrival_type": patient.arrival_type,
+            "arrival_method": patient.arrival_method,
+            "arrival_date": patient.arrival_date,
+            "arrival_time": patient.arrival_time,
+            "priority": patient.priority,
+            "referral_source": patient.referral_source,
+            "notes": patient.notes,
+            "verification_status": patient.verification_status,
+            "verified_at": (
+                patient.verified_at.isoformat()
+                if patient.verified_at
+                else None
+            ),
+            "status": patient.status,
+            "created_at": (
+                patient.created_at.isoformat()
+                if patient.created_at
+                else None
+            ),
         })
 
     return {
         "patients": results,
         "total": len(results),
-        "registered": sum(1 for p in results if p["status"] == "Registered"),
-        "pending": sum(1 for p in results if p["verification_status"] == "Pending review"),
-        "emergency": sum(1 for p in results if p["arrival_type"] == "Emergency"),
+        "registered": sum(
+            1 for patient in results
+            if patient["status"] == "Registered"
+        ),
+        "pending": sum(
+            1 for patient in results
+            if patient["verification_status"] == "Pending review"
+        ),
+        "emergency": sum(
+            1 for patient in results
+            if patient["arrival_type"] == "Emergency"
+        ),
     }
 
 
-@router.post("/patients", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/patients",
+    status_code=status.HTTP_201_CREATED,
+)
 def register_hospital_patient(
     request: HospitalPatientCreate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_hospital_staff),
 ):
+    hospital_id = get_hospital_scope(user)
+
+    # A hospital patient record must belong to a specific hospital.
+    if hospital_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "A specific hospital must be selected before "
+                "registering a patient."
+            ),
+        )
+
     patient = HospitalPatient(
+        hospital_id=hospital_id,
         first_name=request.first_name.strip(),
         last_name=request.last_name.strip(),
         date_of_birth=request.date_of_birth,
@@ -260,9 +571,13 @@ def register_hospital_patient(
         status="Registered",
     )
 
-    db.add(patient)
-    db.commit()
-    db.refresh(patient)
+    try:
+        db.add(patient)
+        db.commit()
+        db.refresh(patient)
+    except Exception:
+        db.rollback()
+        raise
 
     log_audit(
         db,
@@ -270,13 +585,16 @@ def register_hospital_patient(
         resource_type="HospitalPatient",
         user=user,
         resource_id=patient.id,
-        details=f"Patient: {patient.first_name} {patient.last_name}, Priority: {patient.priority}"
+        details=(
+            f"Patient: {patient.first_name} {patient.last_name}, "
+            f"Priority: {patient.priority}"
+        ),
     )
 
     return {
-        "message": "Patient successfully registered and saved to PostgreSQL",
+        "message": "Patient successfully registered",
         "id": patient.id,
-        "reference": f"MEDRA-PAT-{patient.id:04d}",
+        "reference": get_patient_reference(patient.id),
         "name": f"{patient.first_name} {patient.last_name}",
         "verification_status": patient.verification_status,
         "status": patient.status,
@@ -289,30 +607,58 @@ def get_hospital_patient_details(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_hospital_staff),
 ):
-    p = db.query(HospitalPatient).filter(HospitalPatient.id == patient_id).first()
-    if not p:
-        raise HTTPException(status_code=404, detail="Patient record not found")
+    hospital_id = get_hospital_scope(user)
+
+    patient_query = db.query(HospitalPatient).filter(
+        HospitalPatient.id == patient_id
+    )
+
+    if hospital_id is not None:
+        patient_query = patient_query.filter(
+            HospitalPatient.hospital_id == hospital_id
+        )
+
+    patient = patient_query.first()
+
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient record not found",
+        )
 
     return {
-        "id": p.id,
-        "reference": f"MEDRA-PAT-{p.id:04d}",
-        "first_name": p.first_name,
-        "last_name": p.last_name,
-        "name": f"{p.first_name} {p.last_name}",
-        "date_of_birth": p.date_of_birth.isoformat() if p.date_of_birth else None,
-        "gender": p.gender,
-        "phone": p.phone,
-        "email": p.email,
-        "arrival_type": p.arrival_type,
-        "arrival_method": p.arrival_method,
-        "arrival_date": p.arrival_date,
-        "arrival_time": p.arrival_time,
-        "priority": p.priority,
-        "referral_source": p.referral_source,
-        "notes": p.notes,
-        "verification_status": p.verification_status,
-        "status": p.status,
-        "created_at": p.created_at.isoformat() if p.created_at else None,
+        "id": patient.id,
+        "reference": get_patient_reference(patient.id),
+        "first_name": patient.first_name,
+        "last_name": patient.last_name,
+        "name": f"{patient.first_name} {patient.last_name}",
+        "date_of_birth": (
+            patient.date_of_birth.isoformat()
+            if patient.date_of_birth
+            else None
+        ),
+        "gender": patient.gender,
+        "phone": patient.phone,
+        "email": patient.email,
+        "arrival_type": patient.arrival_type,
+        "arrival_method": patient.arrival_method,
+        "arrival_date": patient.arrival_date,
+        "arrival_time": patient.arrival_time,
+        "priority": patient.priority,
+        "referral_source": patient.referral_source,
+        "notes": patient.notes,
+        "verification_status": patient.verification_status,
+        "verified_at": (
+            patient.verified_at.isoformat()
+            if patient.verified_at
+            else None
+        ),
+        "status": patient.status,
+        "created_at": (
+            patient.created_at.isoformat()
+            if patient.created_at
+            else None
+        ),
     }
 
 
@@ -323,70 +669,107 @@ def verify_hospital_patient(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_hospital_staff),
 ):
-    p = db.query(HospitalPatient).filter(HospitalPatient.id == patient_id).first()
-    if not p:
-        raise HTTPException(status_code=404, detail="Patient record not found")
+    hospital_id = get_hospital_scope(user)
 
-    p.verification_status = request.verification_status
-    p.verified_by_user_id = user.id
-    p.verified_at = datetime.now(timezone.utc)
+    patient_query = db.query(HospitalPatient).filter(
+        HospitalPatient.id == patient_id
+    )
+
+    if hospital_id is not None:
+        patient_query = patient_query.filter(
+            HospitalPatient.hospital_id == hospital_id
+        )
+
+    patient = patient_query.first()
+
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient record not found",
+        )
+
+    patient.verification_status = request.verification_status
+    patient.verified_by_user_id = user.id
+    patient.verified_at = datetime.now(timezone.utc)
+
     if request.notes:
-        p.notes = f"{p.notes or ''}\n[Verification Note by {user.full_name}]: {request.notes}".strip()
+        patient.notes = (
+            f"{patient.notes or ''}\n"
+            f"[Verification Note by {user.full_name}]: {request.notes}"
+        ).strip()
 
-    db.commit()
-    db.refresh(p)
+    try:
+        db.commit()
+        db.refresh(patient)
+    except Exception:
+        db.rollback()
+        raise
 
     log_audit(
         db,
         action="PATIENT_VERIFIED",
         resource_type="HospitalPatient",
         user=user,
-        resource_id=p.id,
-        details=f"Status set to {request.verification_status}"
+        resource_id=patient.id,
+        details=f"Status set to {patient.verification_status}",
     )
 
     return {
-        "message": f"Patient verification recorded as {request.verification_status}",
-        "id": p.id,
-        "reference": f"MEDRA-PAT-{p.id:04d}",
-        "verification_status": p.verification_status,
+        "message": (
+            "Patient verification recorded as "
+            f"{patient.verification_status}"
+        ),
+        "id": patient.id,
+        "reference": get_patient_reference(patient.id),
+        "verification_status": patient.verification_status,
         "verified_by": user.full_name,
-        "verified_at": p.verified_at.isoformat()
+        "verified_at": (
+            patient.verified_at.isoformat()
+            if patient.verified_at
+            else None
+        ),
     }
 
+
+# =========================================================
+# HOSPITAL RESOURCES AND BED CAPACITY
+# =========================================================
 
 @router.get("/resources")
 def get_hospital_resources(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_hospital_staff),
 ):
-    resources = db.query(HospitalResource).all()
+    hospital_id = get_hospital_scope(user)
 
-    # Seed initial standard resources if empty
-    if not resources:
-        initial = [
-            HospitalResource(hospital_id=1, resource_type="ICU Bed", total_count=12, occupied_count=8),
-            HospitalResource(hospital_id=1, resource_type="Emergency Bed", total_count=20, occupied_count=14),
-            HospitalResource(hospital_id=1, resource_type="Oxygen Unit", total_count=30, occupied_count=15),
-            HospitalResource(hospital_id=1, resource_type="Ventilator", total_count=10, occupied_count=6),
-            HospitalResource(hospital_id=1, resource_type="General Ward Bed", total_count=50, occupied_count=32),
-        ]
-        db.add_all(initial)
-        db.commit()
-        resources = db.query(HospitalResource).all()
+    resource_query = db.query(HospitalResource)
+
+    if hospital_id is not None:
+        resource_query = resource_query.filter(
+            HospitalResource.hospital_id == hospital_id
+        )
+
+    resources = resource_query.all()
 
     return {
         "resources": [
             {
-                "id": r.id,
-                "hospital_id": r.hospital_id,
-                "resource_type": r.resource_type,
-                "total_count": r.total_count,
-                "occupied_count": r.occupied_count,
-                "available_count": max(0, r.total_count - r.occupied_count),
-                "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+                "id": resource.id,
+                "hospital_id": resource.hospital_id,
+                "resource_type": resource.resource_type,
+                "total_count": resource.total_count,
+                "occupied_count": resource.occupied_count,
+                "available_count": max(
+                    0,
+                    resource.total_count - resource.occupied_count,
+                ),
+                "updated_at": (
+                    resource.updated_at.isoformat()
+                    if resource.updated_at
+                    else None
+                ),
             }
-            for r in resources
+            for resource in resources
         ]
     }
 
@@ -398,48 +781,103 @@ def update_hospital_resource(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_hospital_staff),
 ):
-    r = db.query(HospitalResource).filter(HospitalResource.id == resource_id).first()
-    if not r:
-        raise HTTPException(status_code=404, detail="Resource item not found")
+    hospital_id = get_hospital_scope(user)
 
-    if request.total_count is not None:
-        if request.occupied_count > request.total_count:
-            raise HTTPException(status_code=400, detail="Occupied count cannot exceed total count")
-        r.total_count = request.total_count
+    resource_query = db.query(HospitalResource).filter(
+        HospitalResource.id == resource_id
+    )
 
-    if request.occupied_count > r.total_count:
-        raise HTTPException(status_code=400, detail="Occupied count cannot exceed total capacity")
+    if hospital_id is not None:
+        resource_query = resource_query.filter(
+            HospitalResource.hospital_id == hospital_id
+        )
 
-    r.occupied_count = request.occupied_count
-    db.commit()
-    db.refresh(r)
+    resource = resource_query.first()
+
+    if not resource:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Resource item not found",
+        )
+
+    new_total = (
+        request.total_count
+        if request.total_count is not None
+        else resource.total_count
+    )
+
+    new_occupied = request.occupied_count
+
+    if new_total < 0 or new_occupied < 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Resource counts cannot be negative",
+        )
+
+    if new_occupied > new_total:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Occupied count cannot exceed total capacity",
+        )
+
+    resource.total_count = new_total
+    resource.occupied_count = new_occupied
+
+    try:
+        db.commit()
+        db.refresh(resource)
+    except Exception:
+        db.rollback()
+        raise
 
     log_audit(
         db,
         action="RESOURCE_UPDATED",
         resource_type="HospitalResource",
         user=user,
-        resource_id=r.id,
-        details=f"{r.resource_type}: Occupied={r.occupied_count}, Total={r.total_count}"
+        resource_id=resource.id,
+        details=(
+            f"{resource.resource_type}: "
+            f"Occupied={resource.occupied_count}, "
+            f"Total={resource.total_count}"
+        ),
     )
 
     return {
-        "message": f"{r.resource_type} capacity updated successfully",
-        "id": r.id,
-        "resource_type": r.resource_type,
-        "total_count": r.total_count,
-        "occupied_count": r.occupied_count,
-        "available_count": max(0, r.total_count - r.occupied_count),
+        "message": f"{resource.resource_type} capacity updated successfully",
+        "id": resource.id,
+        "resource_type": resource.resource_type,
+        "total_count": resource.total_count,
+        "occupied_count": resource.occupied_count,
+        "available_count": max(
+            0,
+            resource.total_count - resource.occupied_count,
+        ),
     }
 
+
+# =========================================================
+# HOSPITAL AUDIT LOGS
+# =========================================================
 
 @router.get("/audit-logs")
 def get_hospital_audit_logs(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_hospital_staff),
 ):
+    hospital_id = get_hospital_scope(user)
+
+    log_query = db.query(AuditLog)
+
+    # Hospital staff see their own logs.
+    # Admin accounts can review logs across the network.
+    if hospital_id is not None:
+        log_query = log_query.filter(
+            AuditLog.user_id == user.id
+        )
+
     logs = (
-        db.query(AuditLog)
+        log_query
         .order_by(desc(AuditLog.timestamp))
         .limit(25)
         .all()
@@ -454,7 +892,11 @@ def get_hospital_audit_logs(
                 "resource_id": log.resource_id,
                 "user_email": log.user_email,
                 "details": log.details,
-                "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+                "timestamp": (
+                    log.timestamp.isoformat()
+                    if log.timestamp
+                    else None
+                ),
             }
             for log in logs
         ]

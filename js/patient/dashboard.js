@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await loadDashboardData();
     setupQuickActions();
+    window.setInterval(loadActiveEmergency, 10000);
 });
 
 async function loadDashboardData() {
@@ -24,8 +25,7 @@ async function loadDashboardData() {
         renderPatientInfo(profile);
 
         // 2. Check Active Emergency
-        const activeData = await api.get("/api/patient/emergencies/active");
-        renderActiveEmergency(activeData);
+        await loadActiveEmergency();
 
         // 3. Load Vitals
         const vitalsData = await api.get("/api/patient/vitals");
@@ -40,6 +40,15 @@ async function loadDashboardData() {
         if (typeof showNotification === "function") {
             showNotification(err.message || "Failed to load dashboard data.", "warning");
         }
+    }
+}
+
+async function loadActiveEmergency() {
+    try {
+        const activeData = await window.MedraAPI.get("/api/patient/emergencies/active");
+        renderActiveEmergency(activeData);
+    } catch (err) {
+        console.error("Active emergency refresh error:", err);
     }
 }
 
@@ -75,22 +84,32 @@ function renderActiveEmergency(activeData) {
 
     if (!banner) return;
 
-    if (activeData && activeData.has_active && activeData.emergency) {
+    if (activeData?.has_active && activeData.emergency) {
         const emg = activeData.emergency;
         banner.style.display = "block";
         banner.style.background = "#fff0f2";
         banner.style.border = "1px solid #ef4554";
 
-        if (statusText) statusText.textContent = `Status: ${emg.status} (${emg.emergency_type})`;
+        if (statusText) statusText.textContent = `${emg.reference}: ${emg.status} (${emg.emergency_type})`;
         if (ambText) {
-            ambText.textContent = emg.ambulance 
-                ? `Ambulance: ${emg.ambulance.vehicle_number} (${emg.ambulance.driver_name})`
-                : "Ambulance: Assigning nearest vehicle...";
+            if (!emg.ambulance) {
+                ambText.textContent = "Ambulance: Waiting for an eligible crew to accept";
+            } else {
+                const locationTime = emg.ambulance_location_updated_at
+                    ? new Date(emg.ambulance_location_updated_at)
+                    : null;
+                const isFresh = locationTime && Number.isFinite(locationTime.getTime())
+                    && Date.now() - locationTime.getTime() <= 120000;
+                const locationState = isFresh
+                    ? `Location updated ${locationTime.toLocaleTimeString()}`
+                    : "Location unavailable or stale";
+                ambText.textContent = `Ambulance: ${emg.ambulance.vehicle_number} (${emg.ambulance.driver_name}) · ${locationState}`;
+            }
         }
         if (hospText) {
             hospText.textContent = emg.hospital 
                 ? `Hospital Destination: ${emg.hospital.name}`
-                : "Hospital: Routing to Trauma Center...";
+                : "Hospital: Not selected yet";
         }
     } else {
         banner.style.display = "none";

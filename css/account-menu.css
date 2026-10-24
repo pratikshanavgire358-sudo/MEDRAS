@@ -1,0 +1,164 @@
+.medra-account-dropdown {
+    position: relative;
+    z-index: 1000;
+    display: inline-flex;
+    flex: 0 0 auto;
+    color: #18354d;
+    font-family: inherit;
+}
+
+.medra-account-trigger {
+    display: inline-flex;
+    min-height: 2.7rem;
+    align-items: center;
+    gap: .55rem;
+    padding: .35rem .65rem;
+    color: #21445e;
+    background: #fff;
+    border: 1px solid #d5e5ed;
+    border-radius: .8rem;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.medra-account-trigger:hover,
+.medra-account-trigger:focus-visible {
+    background: #f0f8fc;
+    border-color: #8cbcd1;
+    outline: 2px solid rgb(61 144 178 / 18%);
+    outline-offset: 1px;
+}
+
+.medra-account-avatar {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    place-items: center;
+    color: #176e91;
+    background: #e2f3f8;
+    border-radius: 50%;
+    font-size: .95rem;
+    font-weight: 750;
+}
+
+.medra-account-trigger-text {
+    display: grid;
+    max-width: 12rem;
+    gap: .05rem;
+}
+
+.medra-account-trigger-text strong {
+    overflow: hidden;
+    color: #21445e;
+    font-size: .86rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.medra-account-trigger-text small {
+    color: #6a8395;
+    font-size: .73rem;
+    text-transform: capitalize;
+}
+
+.medra-account-trigger > i {
+    color: #71899a;
+    font-size: .7rem;
+}
+
+.medra-account-menu {
+    position: absolute;
+    top: calc(100% + .55rem);
+    right: 0;
+    width: min(17rem, calc(100vw - 2rem));
+    padding: .45rem;
+    background: #fff;
+    border: 1px solid #d9e7ef;
+    border-radius: .85rem;
+    box-shadow: 0 14px 34px rgb(28 68 94 / 16%);
+}
+
+.medra-account-menu[hidden] {
+    display: none;
+}
+
+.medra-account-summary {
+    display: grid;
+    gap: .15rem;
+    margin-bottom: .35rem;
+    padding: .75rem .8rem;
+    border-bottom: 1px solid #e7eef3;
+}
+
+.medra-account-summary strong {
+    color: #1e4057;
+    font-size: .94rem;
+    overflow-wrap: anywhere;
+}
+
+.medra-account-summary span {
+    color: #6b8292;
+    font-size: .8rem;
+    text-transform: capitalize;
+}
+
+.medra-account-menu a,
+.medra-account-menu button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: .65rem;
+    padding: .65rem .8rem;
+    color: #34566d;
+    background: transparent;
+    border: 0;
+    border-radius: .55rem;
+    cursor: pointer;
+    font: inherit;
+    font-size: .9rem;
+    text-align: left;
+    text-decoration: none;
+}
+
+.medra-account-menu a:hover,
+.medra-account-menu a:focus-visible,
+.medra-account-menu button:hover,
+.medra-account-menu button:focus-visible {
+    color: #176e91;
+    background: #eaf5fa;
+    outline: none;
+}
+
+.medra-account-menu .medra-account-logout {
+    color: #a33a3a;
+}
+
+.medra-assignment-summary {
+    display: grid;
+    gap: .3rem;
+    margin: 0 0 1rem;
+    padding: .85rem 1rem;
+    color: #21445e;
+    background: #eaf6fa;
+    border: 1px solid #c9e4ee;
+    border-left: 4px solid #2885a9;
+    border-radius: .7rem;
+}
+
+.medra-assignment-summary strong {
+    font-size: .9rem;
+}
+
+.medra-assignment-summary span {
+    color: #536f82;
+    font-size: .85rem;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+    .medra-account-trigger-text {
+        max-width: 8rem;
+    }
+}

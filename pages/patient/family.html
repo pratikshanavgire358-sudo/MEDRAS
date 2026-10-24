@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MEDRA | Family Members</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/patient.css">
+    <link rel="stylesheet" href="../../css/responsive.css">
+    <link rel="stylesheet" href="../../css/patient-support.css">
+</head>
+<body>
+    <main class="patien   t-support-page">
+        <header class="support-header">
+            <a href="dashboard.html" class="support-brand"><i class="bi bi-heart-pulse-fill"></i> MEDRA</a>
+            <nav aria-label="Patient navigation">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="emergency.html">Emergency SOS</a>
+                <a href="family.html" aria-current="page">Family Members</a>
+                <a href="notifications.html">Notifications <span class="support-count" data-unread-count hidden>0</span></a>
+                <a href="profile.html">Profile</a>
+                <button type="button" id="supportLogout" class="support-link-button">Log out</button>
+            </nav>
+        </header>
+
+        <section class="support-content" aria-labelledby="familyHeading">
+            <div class="support-title">
+                <div>
+                    <p class="support-eyebrow">PATIENT ACCOUNT</p>
+                    <h1 id="familyHeading">Family Members</h1>
+                    <p>Manage the family contacts associated with your account.</p>
+                </div>
+                <div class="support-user">Signed in as <strong id="supportUserName">Patient</strong></div>
+            </div>
+
+            <div id="familyMessage" class="support-message" role="status" aria-live="polite" hidden></div>
+
+            <section class="support-card" aria-labelledby="familyFormHeading">
+                <h2 id="familyFormHeading">Add a family member</h2>
+                <form id="familyForm" class="family-form">
+                    <label>
+                        <span>Full name <b aria-hidden="true">*</b></span>
+                        <input name="full_name" required maxlength="100" autocomplete="name">
+                    </label>
+                    <label>
+                        <span>Relationship <b aria-hidden="true">*</b></span>
+                        <input name="relationship" required maxlength="50" placeholder="e.g. Parent, spouse">
+                    </label>
+                    <label>
+                        <span>Mobile number</span>
+                        <input name="mobile" type="tel" maxlength="20" autocomplete="tel">
+                    </label>
+                    <label>
+                        <span>Email</span>
+                        <input name="email" type="email" maxlength="255" autocomplete="email">
+                    </label>
+                    <div class="family-form-actions">
+                        <button type="submit" id="familySaveButton" class="support-primary"><i class="bi bi-person-plus"></i> Add member</button>
+                        <button type="button" id="familyCancelEdit" class="support-secondary" hidden>Cancel edit</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="family-list-section" aria-labelledby="familyListHeading">
+                <div class="support-section-heading">
+                    <h2 id="familyListHeading">Your family contacts</h2>
+                    <span id="familyMemberCount" class="support-muted"></span>
+                </div>
+                <div id="familyLoading" class="support-card support-state" role="status">Loading family members…</div>
+                <div id="familyEmpty" class="support-card support-state" hidden>
+                    <i class="bi bi-people"></i>
+                    <h3>No family members added</h3>
+                    <p>Add a contact above. Only family members saved to your account appear here.</p>
+                </div>
+                <div id="familyList" class="family-card-grid" aria-live="polite"></div>
+            </section>
+        </section>
+    </main>
+    <script src="../../js/api.js"></script>
+    <script src="../../js/common.js"></script>
+    <script src="../../js/patient/support-pages.js"></script>
+</body>
+</html>

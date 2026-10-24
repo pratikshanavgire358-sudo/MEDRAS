@@ -250,10 +250,10 @@
 
                         <select id="emergencyStatusFilter">
                             <option value="all">All statuses</option>
-                            <option value="Ambulance en route">Ambulance en route</option>
-                            <option value="Awaiting arrival">Awaiting arrival</option>
-                            <option value="Arrived">Arrived</option>
-                            <option value="Received">Received</option>
+                            <option value="HOSPITAL_SELECTED">Hospital selected</option>
+                            <option value="HOSPITAL_ACCEPTED">Hospital accepted</option>
+                            <option value="HOSPITAL_ARRIVED">Ambulance arrived</option>
+                            <option value="HOSPITAL_RECEIVED">Patient received</option>
                         </select>
                     </div>
 
@@ -368,8 +368,8 @@
                         <h3>Arrival management</h3>
 
                         <p>
-                            Only mark an arrival after hospital staff confirm
-                            that the patient has physically arrived.
+                            Accept a routed case, confirm patient receipt after
+                            ambulance arrival, and resolve it after care is complete.
                         </p>
                     </div>
 
@@ -380,7 +380,7 @@
                             id="markEmergencyArrived"
                             class="emergency-primary-button"
                         >
-                            Mark Arrived
+                            Accept Incoming Case
                         </button>
 
                         <button
@@ -388,7 +388,15 @@
                             id="markEmergencyReceived"
                             class="emergency-secondary-button"
                         >
-                            Mark Received
+                            Mark Patient Received
+                        </button>
+
+                        <button
+                            type="button"
+                            id="markEmergencyResolved"
+                            class="emergency-secondary-button"
+                        >
+                            Resolve Case
                         </button>
 
                     </div>

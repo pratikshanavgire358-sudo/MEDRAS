@@ -1,36 +1,1836 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EV Doctor Dashboard | MedRA</title>
-  <base href="../../">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/landing.css">
-  <link rel="stylesheet" href="css/account-creation.css">
-  <link rel="stylesheet" href="css/patient-dashboard.css">
-  <link rel="stylesheet" href="css/driver-dashboard.css">
-  <link rel="stylesheet" href="css/resource-overview.css">
-  <link rel="stylesheet" href="css/ev-doctor-dashboard.css">
-  <link rel="stylesheet" href="css/registration-staff-dashboard.css">
-  <link rel="stylesheet" href="css/data-collection-dashboard.css">
-  <link rel="stylesheet" href="css/resource-management-dashboard.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEDRA | EV Doctor Dashboard</title>
+
+    <style>
+        :root {
+            --primary: #1677c8;
+            --primary-dark: #105b9b;
+            --light-blue: #eaf5ff;
+            --background: #f4f8fc;
+            --white: #ffffff;
+            --text: #1d3045;
+            --muted: #718096;
+            --border: #dce8f2;
+            --green: #16845b;
+            --red: #d94343;
+            --orange: #c77916;
+            --shadow: 0 5px 20px rgba(35, 88, 130, 0.07);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        button, input, select, textarea {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .layout {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 245px;
+            background: var(--white);
+            border-right: 1px solid var(--border);
+            padding: 25px 16px;
+            position: fixed;
+            inset: 0 auto 0 0;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 9px 30px;
+        }
+
+        .brand-icon {
+            width: 43px;
+            height: 43px;
+            background: var(--primary);
+            color: white;
+            border-radius: 13px;
+            display: grid;
+            place-items: center;
+            font-size: 27px;
+            font-weight: bold;
+        }
+
+        .brand h1 {
+            font-size: 23px;
+            letter-spacing: 1px;
+        }
+
+        .brand p {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .section-label {
+            color: #91a0b1;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1.4px;
+            padding: 14px 12px 10px;
+        }
+
+        .nav-link {
+            width: 100%;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 12px;
+            margin-bottom: 5px;
+            border-radius: 10px;
+            color: #61748a;
+            text-align: left;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--light-blue);
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            width: 23px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: #ffe9e9;
+            color: var(--red);
+            padding: 3px 7px;
+            border-radius: 12px;
+            font-size: 10px;
+        }
+
+        .sidebar-bottom {
+            border-top: 1px solid var(--border);
+            margin-top: 35px;
+            padding-top: 17px;
+        }
+
+        .doctor-mini {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 8px;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: #dceeff;
+            color: var(--primary);
+            display: grid;
+            place-items: center;
+            font-weight: bold;
+        }
+
+        .doctor-mini strong {
+            display: block;
+            font-size: 12px;
+        }
+
+        .doctor-mini small {
+            display: block;
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .main {
+            margin-left: 245px;
+            width: calc(100% - 245px);
+            min-width: 0;
+        }
+
+        .topbar {
+            min-height: 78px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 30px;
+        }
+
+        .topbar h2 {
+            font-size: 21px;
+        }
+
+        .topbar p {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .online {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--green);
+            background: #e9f8f0;
+            padding: 9px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .online-dot {
+            width: 7px;
+            height: 7px;
+            background: #20a76d;
+            border-radius: 50%;
+        }
+
+        .icon-button {
+            position: relative;
+            border: 1px solid var(--border);
+            background: white;
+            width: 39px;
+            height: 39px;
+            border-radius: 10px;
+            font-size: 17px;
+        }
+
+        .content {
+            padding: 28px 30px;
+            max-width: 1600px;
+            margin: auto;
+        }
+
+        .welcome {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 23px;
+        }
+
+        .welcome h2 {
+            font-size: 23px;
+        }
+
+        .welcome p {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .date-label {
+            color: var(--muted);
+            font-size: 12px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 11px 14px;
+        }
+
+        .alert-banner {
+            background: linear-gradient(105deg, #fff1f1, #fff9f7);
+            border: 1px solid #ffd6d6;
+            border-radius: 13px;
+            padding: 16px 19px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 23px;
+        }
+
+        .alert-icon {
+            width: 43px;
+            height: 43px;
+            background: #ffe0e0;
+            color: var(--red);
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            font-size: 23px;
+        }
+
+        .alert-text {
+            flex: 1;
+        }
+
+        .alert-text strong {
+            font-size: 13px;
+            color: #a92c2c;
+        }
+
+        .alert-text p {
+            color: #8e6666;
+            font-size: 11px;
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+
+        .button {
+            border: none;
+            border-radius: 8px;
+            padding: 11px 15px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .button-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .button-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .button-outline {
+            background: white;
+            color: var(--primary);
+            border: 1px solid #b9d8f3;
+        }
+
+        .button-danger {
+            background: var(--red);
+            color: white;
+        }
+
+        .button-light {
+            background: var(--light-blue);
+            color: var(--primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 17px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            padding: 19px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-top span:first-child {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .stat-icon {
+            width: 37px;
+            height: 37px;
+            border-radius: 10px;
+            background: var(--light-blue);
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .stat-caption {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 7px;
+        }
+
+        .positive {
+            color: var(--green);
+        }
+
+        .negative {
+            color: var(--red);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(290px, 1fr);
+            gap: 21px;
+            align-items: start;
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            margin-bottom: 21px;
+            box-shadow: var(--shadow);
+            min-width: 0;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 19px 20px;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .panel-header h3 {
+            font-size: 14px;
+        }
+
+        .panel-header p {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .panel-body {
+            padding: 18px 20px;
+        }
+
+        .case-list {
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+        }
+
+        .case-card {
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            padding: 15px;
+            transition: 0.2s;
+        }
+
+        .case-card:hover {
+            border-color: #a7d0f4;
+        }
+
+        .case-card.selected {
+            border-color: var(--primary);
+            background: #f7fbff;
+        }
+
+        .case-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .patient-info {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .patient-avatar {
+            width: 43px;
+            height: 43px;
+            display: grid;
+            place-items: center;
+            background: #e8f3ff;
+            color: var(--primary);
+            font-weight: bold;
+            border-radius: 11px;
+        }
+
+        .patient-info strong {
+            font-size: 13px;
+        }
+
+        .patient-info small {
+            display: block;
+            color: var(--muted);
+            font-size: 10px;
+            margin-top: 5px;
+        }
+
+        .severity {
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .severity-critical {
+            background: #ffe5e5;
+            color: #c52f2f;
+        }
+
+        .severity-high {
+            background: #fff0db;
+            color: #a8630d;
+        }
+
+        .severity-medium {
+            background: #fff7d9;
+            color: #95710b;
+        }
+
+        .case-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 13px;
+            color: var(--muted);
+            font-size: 10px;
+            margin: 13px 0;
+        }
+
+        .case-description {
+            color: #4e6176;
+            font-size: 11px;
+            line-height: 1.6;
+            margin-bottom: 13px;
+        }
+
+        .case-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .case-actions .button {
+            padding: 9px 11px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #edf5fc;
+            color: #4275a5;
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 9px;
+        }
+
+        .patient-detail {
+            display: none;
+        }
+
+        .patient-detail.visible {
+            display: block;
+        }
+
+        .detail-heading {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            margin-bottom: 18px;
+        }
+
+        .detail-heading .patient-avatar {
+            width: 53px;
+            height: 53px;
+            font-size: 18px;
+        }
+
+        .detail-heading h4 {
+            font-size: 15px;
+        }
+
+        .detail-heading p {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .vital-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 13px;
+        }
+
+        .vital-label {
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .vital-value {
+            font-size: 21px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .vital-unit {
+            font-size: 10px;
+            color: var(--muted);
+            font-weight: normal;
+        }
+
+        .vital-status {
+            font-size: 9px;
+            margin-top: 6px;
+        }
+
+        .detail-section {
+            margin-top: 20px;
+        }
+
+        .detail-section h4 {
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .detail-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 11px;
+        }
+
+        .detail-line span:first-child {
+            color: var(--muted);
+        }
+
+        .detail-line span:last-child {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .note-input {
+            width: 100%;
+            min-height: 95px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            resize: vertical;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .note-input:focus,
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            margin: 15px 0 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 11px;
+            font-size: 12px;
+            outline: none;
+            background: white;
+        }
+
+        .full-width {
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .resource-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .resource-item:last-child {
+            border-bottom: none;
+        }
+
+        .resource-icon {
+            width: 39px;
+            height: 39px;
+            background: var(--light-blue);
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+        }
+
+        .resource-info {
+            flex: 1;
+        }
+
+        .resource-info strong {
+            display: block;
+            font-size: 11px;
+        }
+
+        .resource-info small {
+            display: block;
+            margin-top: 5px;
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        .resource-status {
+            color: var(--green);
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 11px;
+            padding: 0 0 17px;
+        }
+
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+
+        .timeline-item strong {
+            font-size: 11px;
+        }
+
+        .timeline-item p {
+            font-size: 10px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-top: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 35px 15px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        .footer {
+            padding: 12px 0 5px;
+            text-align: center;
+            color: #91a0b1;
+            font-size: 10px;
+        }
+
+        .mobile-menu {
+            display: none;
+        }
+
+        .toast {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 100;
+            max-width: 340px;
+            background: #17324d;
+            color: white;
+            border-radius: 10px;
+            padding: 14px 18px;
+            box-shadow: var(--shadow);
+            font-size: 12px;
+            display: none;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        @media (max-width: 1150px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.25s;
+                box-shadow: var(--shadow);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .topbar {
+                padding: 14px 17px;
+            }
+
+            .topbar h2 {
+                font-size: 17px;
+            }
+
+            .content {
+                padding: 20px 15px;
+            }
+
+            .mobile-menu {
+                display: inline-grid;
+                place-items: center;
+                margin-right: 8px;
+            }
+
+            .welcome {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .alert-banner {
+                align-items: flex-start;
+                flex-wrap: wrap;
+            }
+
+            .alert-banner .button {
+                margin-left: 56px;
+            }
+
+            .stats-grid {
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 14px;
+            }
+
+            .stat-number {
+                font-size: 24px;
+            }
+
+            .online {
+                font-size: 0;
+                padding: 12px;
+            }
+
+            .online-dot {
+                width: 9px;
+                height: 9px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .stat-top span:first-child {
+                font-size: 10px;
+            }
+
+            .stat-number {
+                font-size: 21px;
+            }
+
+            .panel-header,
+            .panel-body {
+                padding-left: 13px;
+                padding-right: 13px;
+            }
+
+            .case-top {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
+
 <body>
-  <div id="app" data-page="dashboard" data-role="Ambulance" data-subrole="EV Doctor"></div>
-<script src="js/core.js"></script>
-<script src="js/pages/landing.js"></script>
-<script src="js/pages/account-creation.js"></script>
-<script src="js/pages/login.js"></script>
-<script src="js/dashboards/core.js"></script>
-<script src="js/dashboards/registration-staff.js"></script>
-<script src="js/dashboards/ev-doctor.js"></script>
-<script src="js/dashboards/ec-driver.js"></script>
-<script src="js/dashboards/patient.js"></script>
-<script src="js/dashboards/modules.js"></script>
-<script src="js/maps.js"></script>
-<script src="js/app.js"></script>
+<div class="layout">
+
+    <aside class="sidebar" id="sidebar">
+        <div class="brand">
+            <div class="brand-icon">+</div>
+            <div>
+                <h1>MEDRA</h1>
+                <p>SMART EMERGENCY RESPONSE</p>
+            </div>
+        </div>
+
+        <div class="section-label">DOCTOR WORKSPACE</div>
+
+        <button class="nav-link active" data-page="overview">
+            <span class="nav-icon">▦</span> Overview
+        </button>
+
+        <button class="nav-link" data-page="emergencies">
+            <span class="nav-icon">🚨</span> Emergency Cases
+            <span class="nav-badge" id="navEmergencyCount">0</span>
+        </button>
+
+        <button class="nav-link" data-page="patients">
+            <span class="nav-icon">♙</span> Patient Records
+        </button>
+
+        <button class="nav-link" data-page="ambulances">
+            <span class="nav-icon">🚑</span> Ambulance Coordination
+        </button>
+
+        <button class="nav-link" data-page="notes">
+            <span class="nav-icon">▤</span> Clinical Notes
+        </button>
+
+        <div class="section-label">ACCOUNT</div>
+
+        <button class="nav-link" data-page="profile">
+            <span class="nav-icon">⚙</span> My Profile
+        </button>
+
+        <button class="nav-link" id="logoutButton">
+            <span class="nav-icon">↪</span> Logout
+        </button>
+
+        <div class="sidebar-bottom">
+            <div class="doctor-mini">
+                <div class="avatar">DR</div>
+                <div>
+                    <strong id="doctorSidebarName">EV Doctor</strong>
+                    <small>Emergency Medical Team</small>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <button class="icon-button mobile-menu" id="menuButton"
+                        aria-label="Open navigation">☰</button>
+                <div>
+                    <h2 id="topbarTitle">Doctor Dashboard</h2>
+                    <p>Emergency response and patient care</p>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <div class="online">
+                    <span class="online-dot"></span>
+                    CONNECTING
+                </div>
+                <button class="icon-button" id="refreshButton"
+                        title="Refresh live dashboard">↻</button>
+            </div>
+        </header>
+
+        <div class="content">
+
+            <!-- OVERVIEW -->
+            <section class="page-section active" id="page-overview">
+                <div class="welcome">
+                    <div>
+                        <h2>Welcome, <span id="welcomeDoctorName">Doctor</span> 👋</h2>
+                        <p>Review emergency cases and coordinate pre-hospital patient care.</p>
+                    </div>
+                    <div class="date-label" id="currentDate"></div>
+                </div>
+
+                <div class="alert-banner">
+                    <div class="alert-icon">🚨</div>
+                    <div class="alert-text">
+                        <strong>Emergency response overview</strong>
+                        <p>
+                            Active emergencies assigned to your ambulance are shown here.
+                        </p>
+                    </div>
+                    <button class="button button-danger" id="viewEmergenciesButton">
+                        View Cases →
+                    </button>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Active Cases</span>
+                            <span class="stat-icon">🚨</span>
+                        </div>
+                        <div class="stat-number" id="activeCasesCount">0</div>
+                        <div class="stat-caption">Cases awaiting assessment</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Patients Assessed</span>
+                            <span class="stat-icon">🩺</span>
+                        </div>
+                        <div class="stat-number" id="assessedCount">0</div>
+                        <div class="stat-caption positive">Saved assessments</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Assigned Unit</span>
+                            <span class="stat-icon">🚑</span>
+                        </div>
+                        <div class="stat-number" id="availableAmbulancesCount">—</div>
+                        <div class="stat-caption" id="linkedUnitStatus">Unit status unavailable</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Critical Cases</span>
+                            <span class="stat-icon">♥</span>
+                        </div>
+                        <div class="stat-number" id="criticalCasesCount">0</div>
+                        <div class="stat-caption negative">Prioritize clinical review</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <h3>Priority Emergency Cases</h3>
+                                <p>Review and assess patients</p>
+                            </div>
+                            <button class="button button-outline"
+                                    data-goto="emergencies">View All</button>
+                        </div>
+                        <div class="panel-body">
+                            <div class="case-list" id="overviewCaseList"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="panel">
+                            <div class="panel-header">
+                                <div>
+                                    <h3>Ambulance Resources</h3>
+                                    <p>Linked ambulance unit</p>
+                                </div>
+                            </div>
+                            <div class="panel-body" id="resourceList"></div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="panel-header">
+                                <div>
+                                    <h3>Recent Assessments</h3>
+                                    <p>Saved to the emergency record</p>
+                                </div>
+                            </div>
+                            <div class="panel-body" id="activityList"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- EMERGENCIES -->
+            <section class="page-section" id="page-emergencies">
+                <div class="welcome">
+                    <div>
+                        <h2>Emergency Cases</h2>
+                        <p>Review case information and record your assessment.</p>
+                    </div>
+                    <button class="button button-outline" id="resetDemoButton">
+                        Refresh Queue
+                    </button>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <h3>Case Queue</h3>
+                                <p>Emergencies assigned to your linked ambulance</p>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="case-list" id="allCaseList"></div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <h3>Patient Assessment</h3>
+                                <p>Select a case to review</p>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="patient-detail" id="patientDetail">
+                                <div class="detail-heading">
+                                    <div class="patient-avatar" id="detailAvatar">P</div>
+                                    <div>
+                                        <h4 id="detailName">Patient</h4>
+                                        <p id="detailId">Case ID</p>
+                                    </div>
+                                </div>
+
+                                <div class="vitals-grid" id="vitalsGrid"></div>
+
+                                <div class="detail-section">
+                                    <h4>Reported Information</h4>
+                                    <div class="detail-line">
+                                        <span>Symptoms</span>
+                                        <span id="detailSymptoms">—</span>
+                                    </div>
+                                    <div class="detail-line">
+                                        <span>Location</span>
+                                        <span id="detailLocation">—</span>
+                                    </div>
+                                    <div class="detail-line">
+                                        <span>Linked medical data</span>
+                                        <span id="detailAllergies">No additional record</span>
+                                    </div>
+                                </div>
+
+                                <div class="detail-section">
+                                    <h4>Clinical Assessment</h4>
+                                    <label class="form-label" for="severitySelect">
+                                        Assessment priority
+                                    </label>
+                                    <select class="form-control" id="severitySelect">
+                                        <option value="CRITICAL">Critical</option>
+                                        <option value="HIGH">High</option>
+                                        <option value="NORMAL">Normal</option>
+                                        <option value="LOW">Low</option>
+                                    </select>
+
+                                    <label class="form-label" for="assessmentNotes">
+                                        Assessment notes
+                                    </label>
+                                    <textarea class="note-input" id="assessmentNotes"
+                                        placeholder="Enter assessment and care notes..."></textarea>
+
+                                    <label class="form-label" for="treatmentSelect">
+                                        Recommended next step
+                                    </label>
+                                    <select class="form-control" id="treatmentSelect">
+                                        <option value="Immediate hospital transfer">
+                                            Immediate hospital transfer
+                                        </option>
+                                        <option value="Continue monitoring">
+                                            Continue monitoring
+                                        </option>
+                                        <option value="Request ambulance">
+                                            Request ambulance
+                                        </option>
+                                        <option value="Needs further assessment">
+                                            Needs further assessment
+                                        </option>
+                                    </select>
+
+                                    <button class="button button-primary full-width"
+                                            id="saveAssessmentButton">
+                                        Save Assessment
+                                    </button>
+                                    <button class="button button-outline full-width"
+                                            id="requestAmbulanceButton">
+                                        View Ambulance Assignment
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="empty-state" id="noPatientSelected">
+                                <div style="font-size:35px;margin-bottom:10px;">🩺</div>
+                                Select an emergency case to view its demo details.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PATIENT RECORDS -->
+            <section class="page-section" id="page-patients">
+                <div class="welcome">
+                    <div>
+                        <h2>Patient Records</h2>
+                        <p>Patient details attached to active assigned emergencies.</p>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h3>Patient Directory</h3>
+                            <p>Assigned emergency records only</p>
+                        </div>
+                        <input id="patientSearch" class="form-control"
+                               style="max-width:240px"
+                               placeholder="Search patient or case ID...">
+                    </div>
+                    <div class="panel-body">
+                        <div class="case-list" id="patientDirectory"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AMBULANCES -->
+            <section class="page-section" id="page-ambulances">
+                <div class="welcome">
+                    <div>
+                        <h2>Ambulance Coordination</h2>
+                        <p>View the ambulance and hospital linked to active assignments.</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <h3>Ambulance Fleet</h3>
+                                <p>Live assignment details</p>
+                            </div>
+                        </div>
+                        <div class="panel-body" id="ambulanceDirectory"></div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <h3>Coordination Request</h3>
+                                <p>Local demo form</p>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <p class="text-muted" id="assignmentSummary">No active ambulance assignment.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CLINICAL NOTES -->
+            <section class="page-section" id="page-notes">
+                <div class="welcome">
+                    <div>
+                        <h2>Clinical Notes</h2>
+                        <p>Assessment notes saved to assigned emergency records.</p>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h3>Assessment History</h3>
+                            <p>Clinical notes from your linked emergency assignments.</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="case-list" id="notesList"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PROFILE -->
+            <section class="page-section" id="page-profile">
+                <div class="welcome">
+                    <div>
+                        <h2>Doctor Profile</h2>
+                        <p>Authenticated account and assigned ambulance.</p>
+                    </div>
+                </div>
+
+                <div class="panel" style="max-width:650px">
+                    <div class="panel-header">
+                        <h3>Profile Information</h3>
+                    </div>
+                    <div class="panel-body">
+                        <label class="form-label" for="doctorNameInput">Display name</label>
+                        <input class="form-control" id="doctorNameInput"
+                               value="" disabled>
+
+                        <label class="form-label" for="doctorSpecialty">Specialty</label>
+                        <input class="form-control" id="doctorSpecialty"
+                               value="EV Doctor" disabled>
+
+                        <label class="form-label" for="doctorHospital">Assigned hospital</label>
+                        <input class="form-control" id="doctorHospital"
+                               value="" disabled>
+
+                        <button class="button button-primary full-width" id="saveProfileButton">
+                            Profile is managed by your MEDRA account
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <div class="footer">
+                MEDRA Smart Emergency Response System · EV Doctor Portal
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+    if (false) {
+    /*
+      FRONTEND DEMO ONLY
+      The records below are fictional sample records.
+      They are not fetched from FastAPI or saved to PostgreSQL.
+      Replace the demo data functions with your authenticated MEDRA API calls.
+    */
+
+    const demoCases = [
+        {
+            id: "DEMO-ER-001",
+            patientId: "DEMO-P001",
+            name: "Sample Patient A",
+            age: 45,
+            gender: "Male",
+            initials: "PA",
+            severity: "Critical",
+            status: "Awaiting assessment",
+            symptoms: "Chest discomfort and breathlessness",
+            location: "Solapur · Demo location",
+            allergies: "Not provided",
+            time: "Just now · Demo",
+            description: "Example emergency record for testing the assessment interface.",
+            vitals: {
+                heartRate: ["112", "bpm", "Review required"],
+                spo2: ["92", "%", "Review required"],
+                bp: ["150/95", "mmHg", "Review required"],
+                temperature: ["37.4", "°C", "Demo reading"]
+            }
+        },
+        {
+            id: "DEMO-ER-002",
+            patientId: "DEMO-P002",
+            name: "Sample Patient B",
+            age: 32,
+            gender: "Female",
+            initials: "PB",
+            severity: "High",
+            status: "Under review",
+            symptoms: "Leg injury after a road incident",
+            location: "Solapur · Demo location",
+            allergies: "Not provided",
+            time: "5 minutes ago · Demo",
+            description: "Example case to test doctor assessment and ambulance coordination.",
+            vitals: {
+                heartRate: ["98", "bpm", "Demo reading"],
+                spo2: ["97", "%", "Demo reading"],
+                bp: ["125/82", "mmHg", "Demo reading"],
+                temperature: ["36.8", "°C", "Demo reading"]
+            }
+        },
+        {
+            id: "DEMO-ER-003",
+            patientId: "DEMO-P003",
+            name: "Sample Patient C",
+            age: 27,
+            gender: "Male",
+            initials: "PC",
+            severity: "Medium",
+            status: "Monitoring",
+            symptoms: "Dizziness reported",
+            location: "Solapur · Demo location",
+            allergies: "Not provided",
+            time: "12 minutes ago · Demo",
+            description: "Example monitoring record for testing the dashboard.",
+            vitals: {
+                heartRate: ["84", "bpm", "Demo reading"],
+                spo2: ["98", "%", "Demo reading"],
+                bp: ["118/78", "mmHg", "Demo reading"],
+                temperature: ["36.7", "°C", "Demo reading"]
+            }
+        }
+    ];
+
+    const demoAmbulances = [
+        { id: "DEMO-AMB-01", name: "Ambulance Unit 01", type: "Basic Life Support", status: "Available" },
+        { id: "DEMO-AMB-02", name: "Ambulance Unit 02", type: "Advanced Life Support", status: "On assignment" },
+        { id: "DEMO-AMB-03", name: "Ambulance Unit 03", type: "Emergency Response", status: "Available" }
+    ];
+
+    let selectedCaseId = null;
+    let assessedIds = new Set();
+    let demoNotes = [];
+    let activities = [
+        { title: "Doctor portal opened", detail: "Demo session started." },
+        { title: "Sample emergency queue loaded", detail: "Fictional sample records displayed." }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+
+    function escapeHTML(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        })[char]);
+    }
+
+    function showToast(message) {
+        const toast = $("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => {
+            toast.classList.remove("show");
+        }, 3500);
+    }
+
+    function addActivity(title, detail) {
+        activities.unshift({ title, detail });
+        activities = activities.slice(0, 6);
+        renderActivities();
+    }
+
+    function renderActivities() {
+        $("activityList").innerHTML = activities.map(item => `
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div>
+                    <strong>${escapeHTML(item.title)}</strong>
+                    <p>${escapeHTML(item.detail)}</p>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    function severityClass(severity) {
+        if (severity === "Critical") return "severity-critical";
+        if (severity === "High") return "severity-high";
+        if (severity === "Medium") return "severity-medium";
+        return "tag";
+    }
+
+    function renderCaseCard(item) {
+        return `
+            <div class="case-card ${selectedCaseId === item.id ? "selected" : ""}">
+                <div class="case-top">
+                    <div class="patient-info">
+                        <div class="patient-avatar">${escapeHTML(item.initials)}</div>
+                        <div>
+                            <strong>${escapeHTML(item.name)}</strong>
+                            <small>${escapeHTML(item.id)} · ${item.age} years · ${escapeHTML(item.gender)}</small>
+                        </div>
+                    </div>
+                    <span class="severity ${severityClass(item.severity)}">
+                        ${escapeHTML(item.severity)}
+                    </span>
+                </div>
+
+                <div class="case-meta">
+                    <span>◷ ${escapeHTML(item.time)}</span>
+                    <span>⌖ ${escapeHTML(item.location)}</span>
+                </div>
+
+                <p class="case-description">${escapeHTML(item.description)}</p>
+
+                <div class="case-actions">
+                    <button class="button button-primary"
+                        data-action="review" data-id="${escapeHTML(item.id)}">
+                        Review Patient
+                    </button>
+                    <span class="tag">${escapeHTML(item.status)}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCases() {
+        const activeCases = demoCases.filter(item =>
+            item.status !== "Assessment saved"
+        );
+
+        $("overviewCaseList").innerHTML = activeCases.slice(0, 2).map(renderCaseCard).join("")
+            || '<div class="empty-state">No active demo cases.</div>';
+
+        $("allCaseList").innerHTML = demoCases.map(renderCaseCard).join("")
+            || '<div class="empty-state">No demo cases.</div>';
+
+        $("navEmergencyCount").textContent = activeCases.length;
+        $("activeCasesCount").textContent = activeCases.length;
+        $("assessedCount").textContent = assessedIds.size;
+        $("availableAmbulancesCount").textContent =
+            demoAmbulances.filter(a => a.status === "Available").length;
+        $("criticalCasesCount").textContent =
+            activeCases.filter(item => item.severity === "Critical").length;
+
+        $("coordCase").innerHTML = demoCases.map(item => `
+            <option value="${escapeHTML(item.id)}">
+                ${escapeHTML(item.id)} — ${escapeHTML(item.name)}
+            </option>
+        `).join("");
+
+        renderPatientDirectory();
+    }
+
+    function renderPatientDirectory() {
+        const search = ($("patientSearch")?.value || "").trim().toLowerCase();
+
+        const filtered = demoCases.filter(item =>
+            item.name.toLowerCase().includes(search) ||
+            item.id.toLowerCase().includes(search) ||
+            item.patientId.toLowerCase().includes(search)
+        );
+
+        $("patientDirectory").innerHTML = filtered.map(item => `
+            <div class="case-card">
+                <div class="case-top">
+                    <div class="patient-info">
+                        <div class="patient-avatar">${escapeHTML(item.initials)}</div>
+                        <div>
+                            <strong>${escapeHTML(item.name)}</strong>
+                            <small>${escapeHTML(item.patientId)} · Case ${escapeHTML(item.id)}</small>
+                        </div>
+                    </div>
+                    <span class="severity ${severityClass(item.severity)}">
+                        ${escapeHTML(item.severity)}
+                    </span>
+                </div>
+                <div class="case-meta">
+                    <span>Age: ${item.age}</span>
+                    <span>Gender: ${escapeHTML(item.gender)}</span>
+                    <span>${escapeHTML(item.location)}</span>
+                </div>
+                <button class="button button-outline"
+                    data-action="review" data-id="${escapeHTML(item.id)}">
+                    Open Case
+                </button>
+            </div>
+        `).join("") || '<div class="empty-state">No matching demo patients.</div>';
+    }
+
+    function renderResources() {
+        $("resourceList").innerHTML = demoAmbulances.map(item => `
+            <div class="resource-item">
+                <div class="resource-icon">🚑</div>
+                <div class="resource-info">
+                    <strong>${escapeHTML(item.name)}</strong>
+                    <small>${escapeHTML(item.id)} · ${escapeHTML(item.type)}</small>
+                </div>
+                <span class="resource-status"
+                    style="${item.status === "Available" ? "" : "color:#c77916"}">
+                    ${escapeHTML(item.status)}
+                </span>
+            </div>
+        `).join("");
+
+        $("ambulanceDirectory").innerHTML = demoAmbulances.map(item => `
+            <div class="resource-item">
+                <div class="resource-icon">🚑</div>
+                <div class="resource-info">
+                    <strong>${escapeHTML(item.name)}</strong>
+                    <small>${escapeHTML(item.id)} · ${escapeHTML(item.type)}</small>
+                    <small>Status: ${escapeHTML(item.status)}</small>
+                </div>
+                <span class="resource-status"
+                    style="${item.status === "Available" ? "" : "color:#c77916"}">
+                    ${escapeHTML(item.status)}
+                </span>
+            </div>
+        `).join("");
+    }
+
+    function selectCase(id) {
+        const item = demoCases.find(record => record.id === id);
+        if (!item) return;
+
+        selectedCaseId = id;
+        $("patientDetail").classList.add("visible");
+        $("noPatientSelected").style.display = "none";
+
+        $("detailAvatar").textContent = item.initials;
+        $("detailName").textContent = item.name;
+        $("detailId").textContent = `${item.patientId} · ${item.id}`;
+        $("detailSymptoms").textContent = item.symptoms;
+        $("detailLocation").textContent = item.location;
+        $("detailAllergies").textContent = item.allergies;
+
+        $("vitalsGrid").innerHTML = [
+            ["Heart Rate", item.vitals.heartRate],
+            ["SpO₂", item.vitals.spo2],
+            ["Blood Pressure", item.vitals.bp],
+            ["Temperature", item.vitals.temperature]
+        ].map(([label, values]) => `
+            <div class="vital-card">
+                <div class="vital-label">${escapeHTML(label)}</div>
+                <div class="vital-value">
+                    ${escapeHTML(values[0])}
+                    <span class="vital-unit">${escapeHTML(values[1])}</span>
+                </div>
+                <div class="vital-status">${escapeHTML(values[2])}</div>
+            </div>
+        `).join("");
+
+        $("severitySelect").value = item.severity;
+        $("assessmentNotes").value = "";
+        $("treatmentSelect").value = "Immediate hospital transfer";
+
+        renderCases();
+        showPage("emergencies");
+    }
+
+    function saveAssessment() {
+        const item = demoCases.find(record => record.id === selectedCaseId);
+
+        if (!item) {
+            showToast("Select an emergency case first.");
+            return;
+        }
+
+        const notes = $("assessmentNotes").value.trim();
+
+        if (!notes) {
+            showToast("Enter assessment notes before saving.");
+            $("assessmentNotes").focus();
+            return;
+        }
+
+        item.severity = $("severitySelect").value;
+        item.status = "Assessment saved";
+        assessedIds.add(item.id);
+
+        demoNotes.unshift({
+            caseId: item.id,
+            patient: item.name,
+            priority: item.severity,
+            treatment: $("treatmentSelect").value,
+            notes: notes,
+            time: new Date().toLocaleString()
+        });
+
+        addActivity("Demo assessment saved", `${item.id} · ${item.severity} priority`);
+        renderCases();
+        renderNotes();
+
+        showToast("Demo assessment saved in this page session only.");
+    }
+
+    function renderNotes() {
+        $("notesList").innerHTML = demoNotes.map(note => `
+            <div class="case-card">
+                <div class="case-top">
+                    <div>
+                        <strong>${escapeHTML(note.patient)}</strong>
+                        <div class="case-meta">${escapeHTML(note.caseId)} · ${escapeHTML(note.time)}</div>
+                    </div>
+                    <span class="severity ${severityClass(note.priority)}">
+                        ${escapeHTML(note.priority)}
+                    </span>
+                </div>
+                <p class="case-description">
+                    <strong>Next step:</strong> ${escapeHTML(note.treatment)}
+                </p>
+                <p class="case-description">${escapeHTML(note.notes)}</p>
+            </div>
+        `).join("") || `
+            <div class="empty-state">
+                No demo assessments saved yet. Select an emergency case to start.
+            </div>
+        `;
+    }
+
+    function showPage(page) {
+        document.querySelectorAll(".page-section").forEach(section => {
+            section.classList.toggle("active", section.id === `page-${page}`);
+        });
+
+        document.querySelectorAll(".nav-link[data-page]").forEach(button => {
+            button.classList.toggle("active", button.dataset.page === page);
+        });
+
+        const titles = {
+            overview: "Doctor Dashboard",
+            emergencies: "Emergency Cases",
+            patients: "Patient Records",
+            ambulances: "Ambulance Coordination",
+            notes: "Clinical Notes",
+            profile: "Doctor Profile"
+        };
+
+        $("topbarTitle").textContent = titles[page] || "Doctor Dashboard";
+        $("sidebar").classList.remove("open");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    document.querySelectorAll(".nav-link[data-page]").forEach(button => {
+        button.addEventListener("click", () => showPage(button.dataset.page));
+    });
+
+    document.querySelectorAll("[data-goto]").forEach(button => {
+        button.addEventListener("click", () => showPage(button.dataset.goto));
+    });
+
+    document.addEventListener("click", event => {
+        const button = event.target.closest("[data-action='review']");
+        if (button) selectCase(button.dataset.id);
+    });
+
+    $("viewEmergenciesButton").addEventListener("click", () => showPage("emergencies"));
+    $("saveAssessmentButton").addEventListener("click", saveAssessment);
+
+    $("requestAmbulanceButton").addEventListener("click", () => {
+        if (!selectedCaseId) {
+            showToast("Select a case first.");
+            return;
+        }
+
+        $("coordCase").value = selectedCaseId;
+        showPage("ambulances");
+        showToast("Demo coordination form opened for " + selectedCaseId + ".");
+    });
+
+    $("coordinationForm").addEventListener("submit", event => {
+        event.preventDefault();
+
+        const caseId = $("coordCase").value;
+        const type = $("coordType").value;
+        const notes = $("coordNotes").value.trim();
+
+        addActivity("Demo coordination request created", `${caseId} · ${type}`);
+        $("coordNotes").value = "";
+
+        showToast(
+            "Demo request created in this page session only. It was not sent to an ambulance."
+        );
+    });
+
+    $("patientSearch").addEventListener("input", renderPatientDirectory);
+
+    $("resetDemoButton").addEventListener("click", () => {
+        if (!confirm("Reset the sample dashboard data for this page session?")) return;
+
+        demoCases[0].severity = "Critical";
+        demoCases[0].status = "Awaiting assessment";
+        demoCases[1].severity = "High";
+        demoCases[1].status = "Under review";
+        demoCases[2].severity = "Medium";
+        demoCases[2].status = "Monitoring";
+
+        assessedIds = new Set();
+        demoNotes = [];
+        selectedCaseId = null;
+
+        $("patientDetail").classList.remove("visible");
+        $("noPatientSelected").style.display = "block";
+        $("assessmentNotes").value = "";
+        $("coordNotes").value = "";
+
+        renderCases();
+        renderNotes();
+        addActivity("Demo data reset", "Sample cases restored.");
+
+        showToast("Sample dashboard reset.");
+    });
+
+    $("refreshButton").addEventListener("click", () => {
+        renderCases();
+        renderResources();
+        renderActivities();
+        renderNotes();
+        showToast("Demo dashboard refreshed.");
+    });
+
+    $("menuButton").addEventListener("click", () => {
+        $("sidebar").classList.toggle("open");
+    });
+
+    $("saveProfileButton").addEventListener("click", () => {
+        const name = $("doctorNameInput").value.trim();
+
+        if (!name) {
+            showToast("Enter a display name.");
+            return;
+        }
+
+        $("doctorSidebarName").textContent = name;
+        $("welcomeDoctorName").textContent = name;
+
+        addActivity("Demo profile updated", name);
+        showToast("Demo profile updated in this page session only.");
+    });
+
+    $("logoutButton").addEventListener("click", () => {
+        /*
+          Replace this with your existing MEDRA logout function.
+          Do not clear tokens until your authentication flow is connected.
+        */
+        showToast("Connect this button to your existing MEDRA logout flow.");
+    });
+
+    function initializeDashboard() {
+        $("currentDate").textContent = new Date().toLocaleDateString(undefined, {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            year: "numeric"
+        });
+
+        renderCases();
+        renderResources();
+        renderActivities();
+        renderNotes();
+    }
+
+    initializeDashboard();
+    }
+</script>
+<script src="../../js/api.js"></script>
+<script src="../../js/common.js"></script>
+<script src="../../js/ambulance/ev-doctor.js"></script>
 </body>
 </html>

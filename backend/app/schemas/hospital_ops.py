@@ -30,5 +30,5 @@ class HospitalResourceUpdate(BaseModel):
 
 
 class EmergencyStatusUpdate(BaseModel):
-    status: Literal["REQUESTED", "ASSIGNED", "EN_ROUTE", "ARRIVED", "TRIAGED", "RESOLVED", "CANCELLED"]
+    status: Literal["HOSPITAL_ACCEPTED", "HOSPITAL_RECEIVED", "RESOLVED"]
     notes: Optional[str] = Field(default="", max_length=1000)

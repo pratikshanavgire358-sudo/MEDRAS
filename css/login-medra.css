@@ -1,0 +1,171 @@
+
+/* MEDRA modern login styling */
+/* Preserves the existing login form and authentication logic. */
+
+:root {
+    --medra-primary: #1877c9;
+    --medra-primary-dark: #105da4;
+    --medra-background: #f2f8fd;
+    --medra-surface: #ffffff;
+    --medra-text: #172f46;
+    --medra-muted: #637b90;
+    --medra-border: #dce8f2;
+    --medra-shadow: 0 18px 55px rgba(38, 91, 135, 0.10);
+}
+
+body {
+    background: var(--medra-background);
+    color: var(--medra-text);
+}
+
+.center {
+    min-height: 100vh;
+    padding: 32px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth {
+    width: 100%;
+    max-width: 680px;
+    padding: 34px;
+    background: var(--medra-surface);
+    border: 1px solid var(--medra-border);
+    border-radius: 22px;
+    box-shadow: var(--medra-shadow);
+}
+
+.appbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.auth-header h1 {
+    margin: 10px 0;
+    font-size: clamp(27px, 4vw, 36px);
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    color: var(--medra-text);
+}
+
+.auth-header p {
+    line-height: 1.7;
+    color: var(--medra-muted);
+}
+
+.auth-icon {
+    display: inline-flex;
+    width: 62px;
+    height: 62px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    color: var(--medra-primary);
+    background: #e6f3ff;
+}
+
+.field {
+    margin-bottom: 20px;
+}
+
+.field label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--medra-text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.field input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid var(--medra-border);
+    border-radius: 11px;
+    outline: none;
+    background: #fbfdff;
+    color: var(--medra-text);
+    font: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.field input:focus {
+    border-color: var(--medra-primary);
+    box-shadow: 0 0 0 4px rgba(24, 119, 201, 0.12);
+}
+
+.btn.full {
+    width: 100%;
+    min-height: 49px;
+    border: 0;
+    border-radius: 11px;
+    background: var(--medra-primary);
+    color: white;
+    font-weight: 750;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.btn.full:hover {
+    background: var(--medra-primary-dark);
+    transform: translateY(-1px);
+}
+
+.roles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.role {
+    border: 1px solid var(--medra-border);
+    border-radius: 14px;
+    background: #fbfdff;
+    transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.role:hover {
+    border-color: #83bdec;
+    background: #f0f8ff;
+    transform: translateY(-2px);
+}
+
+.role strong {
+    color: var(--medra-text);
+}
+
+.role small {
+    color: var(--medra-muted);
+}
+
+.auth a.green {
+    color: var(--medra-primary);
+}
+
+.auth a.green:hover {
+    color: var(--medra-primary-dark);
+}
+
+@media (max-width: 520px) {
+    .center {
+        padding: 16px 12px;
+    }
+
+    .auth {
+        padding: 22px 17px;
+        border-radius: 17px;
+    }
+
+    .appbar {
+        margin-bottom: 22px;
+    }
+
+    .roles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

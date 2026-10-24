@@ -1,36 +1,826 @@
+
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EC Driver Dashboard | MedRA</title>
-  <base href="../../">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/landing.css">
-  <link rel="stylesheet" href="css/account-creation.css">
-  <link rel="stylesheet" href="css/patient-dashboard.css">
-  <link rel="stylesheet" href="css/driver-dashboard.css">
-  <link rel="stylesheet" href="css/resource-overview.css">
-  <link rel="stylesheet" href="css/ev-doctor-dashboard.css">
-  <link rel="stylesheet" href="css/registration-staff-dashboard.css">
-  <link rel="stylesheet" href="css/data-collection-dashboard.css">
-  <link rel="stylesheet" href="css/resource-management-dashboard.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>EC Driver Dashboard | MEDRA</title>
+
+    <base href="../../">
+
+    <!-- MEDRA Existing Styles -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/driver-dashboard.css">
+
+    <!-- Leaflet Map -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root {
+            --medra-primary: #2476b9;
+            --medra-primary-dark: #174c78;
+            --medra-light: #edf7ff;
+            --medra-border: #d7e7f4;
+            --medra-text: #233e55;
+            --medra-muted: #718397;
+            --medra-white: #ffffff;
+            --medra-green: #188653;
+            --medra-red: #c63d3d;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f8fc;
+            color: var(--medra-text);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .ec-driver-layout {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .ec-driver-sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            background: var(--medra-white);
+            border-right: 1px solid var(--medra-border);
+            padding: 24px 16px;
+            box-sizing: border-box;
+        }
+
+        .ec-driver-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 10px 26px;
+            border-bottom: 1px solid var(--medra-border);
+        }
+
+        .ec-driver-brand-icon {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            background: var(--medra-light);
+            color: var(--medra-primary);
+            border-radius: 12px;
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        .ec-driver-brand h2 {
+            margin: 0;
+            color: var(--medra-primary-dark);
+            font-size: 22px;
+        }
+
+        .ec-driver-brand p {
+            margin: 4px 0 0;
+            color: var(--medra-muted);
+            font-size: 12px;
+        }
+
+        .ec-driver-role {
+            margin: 22px 10px 10px;
+            color: var(--medra-muted);
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .ec-driver-nav {
+            display: grid;
+            gap: 7px;
+        }
+
+        .ec-driver-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            color: #536b80;
+            text-decoration: none;
+            border-radius: 9px;
+            font-size: 14px;
+        }
+
+        .ec-driver-nav a.active {
+            background: var(--medra-light);
+            color: var(--medra-primary-dark);
+            font-weight: bold;
+        }
+
+        .ec-driver-nav a:hover {
+            background: #f0f7fd;
+        }
+
+        .ec-driver-nav-icon {
+            width: 22px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .ec-driver-sidebar-bottom {
+            margin-top: 35px;
+            padding: 15px 10px;
+            border-top: 1px solid var(--medra-border);
+        }
+
+        .ec-driver-online {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            font-size: 13px;
+        }
+
+        .ec-driver-online-dot {
+            width: 9px;
+            height: 9px;
+            margin-top: 4px;
+            border-radius: 50%;
+            background: var(--medra-green);
+            flex-shrink: 0;
+        }
+
+        .ec-driver-online small {
+            display: block;
+            margin-top: 5px;
+            color: var(--medra-muted);
+            line-height: 1.5;
+        }
+
+        .ec-driver-main {
+            min-width: 0;
+            flex: 1;
+            padding: 26px;
+        }
+
+        .ec-driver-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 18px 22px;
+            background: var(--medra-white);
+            border: 1px solid var(--medra-border);
+            border-radius: 14px;
+            margin-bottom: 25px;
+        }
+
+        .ec-driver-topbar h1 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--medra-primary-dark);
+        }
+
+        .ec-driver-topbar p {
+            margin: 7px 0 0;
+            color: var(--medra-muted);
+            font-size: 13px;
+        }
+
+        .ec-driver-profile {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .ec-driver-avatar {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--medra-light);
+            color: var(--medra-primary-dark);
+            font-weight: bold;
+        }
+
+        .ec-driver-profile strong {
+            display: block;
+            font-size: 14px;
+        }
+
+        .ec-driver-profile small {
+            display: block;
+            margin-top: 4px;
+            color: var(--medra-muted);
+        }
+
+        .ec-driver-section-title {
+            margin: 0 0 8px;
+            color: var(--medra-primary-dark);
+            font-size: 21px;
+        }
+
+        .ec-driver-section-description {
+            margin: 0 0 20px;
+            color: var(--medra-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .ec-driver-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 17px;
+            margin-bottom: 28px;
+        }
+
+        .ec-driver-stat-card {
+            background: var(--medra-white);
+            border: 1px solid var(--medra-border);
+            border-radius: 13px;
+            padding: 20px;
+        }
+
+        .ec-driver-stat-label {
+            color: var(--medra-muted);
+            font-size: 13px;
+        }
+
+        .ec-driver-stat-value {
+            display: block;
+            margin-top: 12px;
+            color: var(--medra-primary-dark);
+            font-size: 27px;
+            font-weight: bold;
+        }
+
+        .ec-driver-stat-note {
+            display: block;
+            margin-top: 7px;
+            color: var(--medra-muted);
+            font-size: 12px;
+        }
+
+        .ec-driver-panel {
+            margin-bottom: 24px;
+            padding: 22px;
+            background: var(--medra-white);
+            border: 1px solid var(--medra-border);
+            border-radius: 14px;
+        }
+
+        .ec-driver-panel-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .ec-driver-panel-heading h2 {
+            margin: 0;
+            color: var(--medra-primary-dark);
+            font-size: 19px;
+        }
+
+        .ec-driver-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 11px 16px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .ec-driver-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .ec-driver-button-refresh {
+            background: var(--medra-light);
+            border-color: var(--medra-border);
+            color: var(--medra-primary-dark);
+        }
+
+        .ec-driver-button-refresh:hover {
+            background: #dcefff;
+        }
+
+        .ec-driver-button-accept {
+            background: var(--medra-green);
+            color: white;
+        }
+
+        .ec-driver-button-accept:hover {
+            background: #126d42;
+        }
+
+        .ec-driver-button-reject {
+            background: #fff1f1;
+            border-color: #f0caca;
+            color: var(--medra-red);
+        }
+
+        .ec-driver-button-reject:hover {
+            background: #ffe1e1;
+        }
+
+        #ecDriverMessage {
+            margin-bottom: 14px;
+        }
+
+        #ecDriverPendingList {
+            display: grid;
+            gap: 16px;
+        }
+
+        .ec-driver-emergency-card {
+            padding: 20px;
+            background: #ffffff;
+            border: 1px solid var(--medra-border);
+            border-left: 5px solid var(--medra-primary);
+            border-radius: 12px;
+        }
+
+        .ec-driver-emergency-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .ec-driver-emergency-heading h3 {
+            margin: 0;
+            color: var(--medra-primary-dark);
+            font-size: 18px;
+        }
+
+        .ec-driver-reference {
+            display: block;
+            margin-top: 7px;
+            color: var(--medra-muted);
+            font-size: 12px;
+        }
+
+        .ec-driver-priority {
+            padding: 7px 10px;
+            border-radius: 20px;
+            background: var(--medra-light);
+            color: var(--medra-primary-dark);
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .ec-driver-emergency-description {
+            margin: 17px 0;
+            color: #4b6277;
+            line-height: 1.7;
+            overflow-wrap: anywhere;
+        }
+
+        .ec-driver-emergency-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .ec-driver-meta-item {
+            padding: 12px;
+            background: #f6faff;
+            border-radius: 8px;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .ec-driver-meta-item strong {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--medra-primary-dark);
+        }
+
+        .ec-driver-map-link {
+            display: inline-block;
+            margin-bottom: 17px;
+            color: var(--medra-primary);
+            font-size: 13px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .ec-driver-map-link:hover {
+            text-decoration: underline;
+        }
+
+        .ec-driver-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .ec-driver-empty {
+            padding: 35px 18px;
+            text-align: center;
+            background: #f7fbff;
+            border: 1px dashed #c8ddeb;
+            border-radius: 12px;
+        }
+
+        .ec-driver-empty-icon {
+            margin-bottom: 12px;
+            color: var(--medra-green);
+            font-size: 30px;
+        }
+
+        .ec-driver-empty h3 {
+            margin: 0 0 8px;
+            color: var(--medra-primary-dark);
+        }
+
+        .ec-driver-empty p {
+            margin: 0;
+            color: var(--medra-muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .ec-driver-footer {
+            padding: 18px 5px;
+            text-align: center;
+            color: var(--medra-muted);
+            font-size: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .ec-driver-sidebar {
+                width: 205px;
+            }
+
+            .ec-driver-main {
+                padding: 18px;
+            }
+
+            .ec-driver-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 650px) {
+            .ec-driver-layout {
+                display: block;
+            }
+
+            .ec-driver-sidebar {
+                width: 100%;
+                padding: 15px;
+                border-right: 0;
+                border-bottom: 1px solid var(--medra-border);
+            }
+
+            .ec-driver-role,
+            .ec-driver-sidebar-bottom {
+                display: none;
+            }
+
+            .ec-driver-nav {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                margin-top: 15px;
+            }
+
+            .ec-driver-main {
+                padding: 14px;
+            }
+
+            .ec-driver-topbar {
+                padding: 16px;
+            }
+
+            .ec-driver-topbar h1 {
+                font-size: 21px;
+            }
+
+            .ec-driver-panel {
+                padding: 15px;
+            }
+
+            .ec-driver-emergency-meta {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
+
 <body>
-  <div id="app" data-page="dashboard" data-role="Ambulance" data-subrole="EC Driver"></div>
-<script src="js/core.js"></script>
-<script src="js/pages/landing.js"></script>
-<script src="js/pages/account-creation.js"></script>
-<script src="js/pages/login.js"></script>
-<script src="js/dashboards/core.js"></script>
-<script src="js/dashboards/registration-staff.js"></script>
-<script src="js/dashboards/ev-doctor.js"></script>
-<script src="js/dashboards/ec-driver.js"></script>
-<script src="js/dashboards/patient.js"></script>
-<script src="js/dashboards/modules.js"></script>
-<script src="js/maps.js"></script>
-<script src="js/app.js"></script>
+
+    <!-- MEDRA APPLICATION ROOT -->
+    <div
+        id="app"
+        data-page="dashboard"
+        data-role="Ambulance"
+        data-subrole="EC Driver"
+    >
+
+        <div class="ec-driver-layout">
+
+            <!-- SIDEBAR -->
+            <aside class="ec-driver-sidebar">
+
+                <div class="ec-driver-brand">
+                    <div class="ec-driver-brand-icon">+</div>
+
+                    <div>
+                        <h2>MEDRA</h2>
+                        <p>Smart Emergency Response</p>
+                    </div>
+                </div>
+
+                <p class="ec-driver-role">Driver workspace</p>
+
+                <nav class="ec-driver-nav" aria-label="Driver navigation">
+
+                    <a href="#overview" class="active">
+                        <span class="ec-driver-nav-icon">⌂</span>
+                        <span>Overview</span>
+                    </a>
+
+                    <a href="#pending-emergencies">
+                        <span class="ec-driver-nav-icon">!</span>
+                        <span>Pending SOS</span>
+                    </a>
+
+                    <a href="#ambulance-status">
+                        <span class="ec-driver-nav-icon">+</span>
+                        <span>Ambulance Status</span>
+                    </a>
+
+                    <a href="#driver-location">
+                        <span class="ec-driver-nav-icon">⌖</span>
+                        <span>Location</span>
+                    </a>
+
+                </nav>
+
+                <div class="ec-driver-sidebar-bottom">
+
+                    <div class="ec-driver-online">
+                        <span class="ec-driver-online-dot"></span>
+
+                        <div>
+                            <strong>MEDRA Driver Portal</strong>
+                            <small id="connectionStatus">
+                                Checking connection...
+                            </small>
+                        </div>
+                    </div>
+
+                </div>
+
+            </aside>
+
+
+            <!-- MAIN CONTENT -->
+            <main class="ec-driver-main">
+
+                <!-- HEADER -->
+                <header class="ec-driver-topbar" id="overview">
+
+                    <div>
+                        <h1>EC Driver Dashboard</h1>
+
+                        <p>
+                            Review emergency requests and coordinate ambulance response.
+                        </p>
+                    </div>
+
+                    <div class="ec-driver-profile">
+
+                        <div class="ec-driver-avatar">D</div>
+
+                        <div>
+                            <strong id="driverName">EC Driver</strong>
+                            <small>Emergency Response Team</small>
+                        </div>
+
+                    </div>
+
+                </header>
+
+
+                <!-- DASHBOARD SUMMARY -->
+                <section aria-label="Driver dashboard summary">
+
+                    <h2 class="ec-driver-section-title">
+                        Response Overview
+                    </h2>
+
+                    <p class="ec-driver-section-description">
+                        Monitor pending emergency requests and respond to eligible SOS alerts.
+                    </p>
+
+                    <div class="ec-driver-stats">
+
+                        <article class="ec-driver-stat-card">
+
+                            <span class="ec-driver-stat-label">
+                                Pending SOS Requests
+                            </span>
+
+                            <strong
+                                class="ec-driver-stat-value"
+                                id="pendingEmergencyCount"
+                            >0</strong>
+
+                            <span class="ec-driver-stat-note">
+                                Requests awaiting an eligible driver
+                            </span>
+
+                        </article>
+
+                        <article class="ec-driver-stat-card">
+
+                            <span class="ec-driver-stat-label">
+                                Current Assignment
+                            </span>
+
+                            <strong
+                                class="ec-driver-stat-value"
+                                style="font-size:20px;"
+                                id="currentAssignmentStatus"
+                            >Checking</strong>
+
+                            <span class="ec-driver-stat-note">
+                                Confirm assignment details before dispatch
+                            </span>
+
+                        </article>
+
+                        <article class="ec-driver-stat-card">
+
+                            <span class="ec-driver-stat-label">
+                                Driver Role
+                            </span>
+
+                            <strong
+                                class="ec-driver-stat-value"
+                                style="font-size:20px;"
+                            >EC Driver</strong>
+
+                            <span class="ec-driver-stat-note">
+                                Emergency Crew Driver
+                            </span>
+
+                        </article>
+
+                    </div>
+
+                </section>
+
+
+                <!-- EMERGENCY REQUESTS -->
+                <section
+                    class="ec-driver-panel"
+                    id="pending-emergencies"
+                >
+
+                    <div class="ec-driver-panel-heading">
+
+                        <div>
+                            <h2>Emergency SOS Requests</h2>
+
+                            <p class="ec-driver-section-description"
+                               style="margin:8px 0 0;">
+                                Review the emergency information before accepting or rejecting a request.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            id="ecDriverRefreshButton"
+                            class="ec-driver-button ec-driver-button-refresh"
+                        >
+                            ↻ Refresh Requests
+                        </button>
+
+                    </div>
+
+                    <div
+                        id="ecDriverMessage"
+                        role="status"
+                        aria-live="polite"
+                    ></div>
+
+                    <div
+                        id="ecDriverPendingList"
+                        aria-live="polite"
+                    >
+
+                        <div class="ec-driver-empty">
+
+                            <div class="ec-driver-empty-icon">⌛</div>
+
+                            <h3>Loading emergency requests</h3>
+
+                            <p>
+                                MEDRA is retrieving pending SOS requests from the server.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- AMBULANCE STATUS -->
+                <section
+                    class="ec-driver-panel"
+                    id="ambulance-status"
+                >
+
+                    <div class="ec-driver-panel-heading">
+                        <h2>Ambulance Assignment</h2>
+                    </div>
+
+                    <p class="ec-driver-section-description">
+                        When you accept an emergency, MEDRA assigns the request through
+                        the backend and updates its status. Check the assigned ambulance
+                        and hospital information before proceeding.
+                    </p>
+
+                    <div class="ec-driver-meta-item">
+                        <strong>Assignment status</strong>
+
+                        <span id="assignmentStatusText">
+                            No assignment information loaded.
+                        </span>
+                    </div>
+
+                </section>
+
+
+                <!-- LOCATION -->
+                <section
+                    class="ec-driver-panel"
+                    id="driver-location"
+                >
+
+                    <div class="ec-driver-panel-heading">
+                        <h2>Emergency Location</h2>
+                    </div>
+
+                    <p class="ec-driver-section-description">
+                        Each emergency card can display the patient's coordinates
+                        and a map link when location data is available.
+                    </p>
+
+                    <div class="ec-driver-meta-item">
+                        <strong>Location services</strong>
+
+                        <span>
+                            Location information depends on the coordinates received
+                            from the emergency request.
+                        </span>
+                    </div>
+
+                </section>
+
+
+                <footer class="ec-driver-footer">
+                    MEDRA Smart Emergency Response System ·
+                    Emergency information should be handled securely.
+                </footer>
+
+            </main>
+
+        </div>
+
+    </div>
+
+
+    <!-- EXISTING MEDRA SCRIPTS -->
+    <script src="js/core.js"></script>
+    <script src="js/pages/landing.js"></script>
+    <script src="js/pages/account-creation.js"></script>
+    <script src="js/pages/login.js"></script>
+    <script src="js/dashboards/core.js"></script>
+    <script src="js/dashboards/registration-staff.js"></script>
+    <script src="js/dashboards/ev-doctor.js"></script>
+    <script src="js/dashboards/ec-driver.js"></script>
+    <script src="js/dashboards/patient.js"></script>
+    <script src="js/dashboards/modules.js"></script>
+    <script src="js/maps.js"></script>
+    <script src="js/app.js"></script>
+
 </body>
 </html>

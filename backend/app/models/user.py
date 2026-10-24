@@ -2,6 +2,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    ForeignKey,
     Integer,
     String,
     func
@@ -46,6 +47,30 @@ class User(Base):
         String(30),
         nullable=False,
         default="patient"
+    )
+
+    ambulance_subrole = Column(String(20), nullable=True)
+    ambulance_id = Column(
+        Integer,
+        ForeignKey(
+            "ambulances.id",
+            ondelete="SET NULL",
+            use_alter=True,
+            name="fk_users_ambulance_id_ambulances",
+        ),
+        nullable=True,
+        index=True,
+    )
+    hospital_id = Column(
+        Integer,
+        ForeignKey(
+            "hospitals.id",
+            ondelete="SET NULL",
+            use_alter=True,
+            name="fk_users_hospital_id_hospitals",
+        ),
+        nullable=True,
+        index=True,
     )
 
     is_active = Column(

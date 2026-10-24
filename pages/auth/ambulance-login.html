@@ -97,8 +97,16 @@
                     throw new Error("This account does not have ambulance crew privileges.");
                 }
 
+                if (data.user.role === "ambulance" && !["EC_DRIVER", "EV_DOCTOR"].includes(data.user.ambulance_subrole)) {
+                    throw new Error("This ambulance account has not been assigned an EC Driver or EV Doctor subrole.");
+                }
+
                 window.MedraAPI.setAuthSession(data.access_token, data.user);
-                window.location.href = "../ambulance/dashboard.html";
+                window.location.href = data.user.role === "admin"
+                    ? "../admin/dashboard.html"
+                    : data.user.ambulance_subrole === "EV_DOCTOR"
+                        ? "../ambulance/ev-doctor.html"
+                        : "../ambulance/dashboard.html";
             } catch (error) {
                 err.textContent = error.message;
                 err.hidden = false;

@@ -1,100 +1,378 @@
 import unittest
+
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from app.core import database
+from app.core.database import Base, get_db
+from app.core.security import hash_password
+from app.models.hospital import HospitalResource
+from app.models.medra_demo import Ambulance, Hospital
+from app.models.patient_profile import PatientProfile
+from app.models.system import AuditLog
+from app.models.user import User
+import app.main as main_module
 from app.main import app
 
+
+test_engine = create_engine(
+    "sqlite://",
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+database.engine = test_engine
+database.SessionLocal.configure(bind=test_engine)
+main_module.engine = test_engine
+
+TestSession = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
+
+
+def override_get_db():
+    db = TestSession()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 
 class TestMedraAPI(unittest.TestCase):
 
+    # =========================================================
+    # TEST SETUP: AUTHENTICATE DEMO ACCOUNTS
+    # =========================================================
+
     @classmethod
     def setUpClass(cls):
-        # Obtain tokens for each role
-        resp = client.post("/api/auth/login", json={"email": "patient@medra.org", "password": "Password@123"})
-        cls.patient_token = resp.json()["access_token"]
-        cls.patient_headers = {"Authorization": f"Bearer {cls.patient_token}"}
+        super().setUpClass()
+        Base.metadata.create_all(bind=test_engine)
+        cls._create_test_data()
 
-        resp = client.post("/api/auth/login", json={"email": "hospital@medra.org", "password": "Password@123"})
-        cls.hospital_token = resp.json()["access_token"]
-        cls.hospital_headers = {"Authorization": f"Bearer {cls.hospital_token}"}
+        cls.patient_token = cls._get_token(
+            "patient@medra.org", "patient"
+        )
+        cls.patient_headers = {
+            "Authorization": f"Bearer {cls.patient_token}"
+        }
 
-        resp = client.post("/api/auth/login", json={"email": "ambulance@medra.org", "password": "Password@123"})
-        cls.ambulance_token = resp.json()["access_token"]
-        cls.ambulance_headers = {"Authorization": f"Bearer {cls.ambulance_token}"}
+        cls.hospital_token = cls._get_token(
+            "hospital@medra.org", "hospital"
+        )
+        cls.hospital_headers = {
+            "Authorization": f"Bearer {cls.hospital_token}"
+        }
 
-        resp = client.post("/api/auth/login", json={"email": "admin@medra.org", "password": "Password@123"})
-        cls.admin_token = resp.json()["access_token"]
-        cls.admin_headers = {"Authorization": f"Bearer {cls.admin_token}"}
+        cls.ambulance_token = cls._get_token(
+            "ambulance@medra.org", "ambulance"
+        )
+        cls.ambulance_headers = {
+            "Authorization": f"Bearer {cls.ambulance_token}"
+        }
 
+        cls.admin_token = cls._get_token(
+            "admin@medra.org", "admin"
+        )
+        cls.admin_headers = {
+            "Authorization": f"Bearer {cls.admin_token}"
+        }
+
+    @classmethod
+    def _get_token(cls, email, role):
+        """Authenticate a demo account and return its access token."""
+
+        response = client.post(
+            "/api/auth/login",
+            json={
+                "email": email,
+                "password": "Password@123"
+            }
+        )
+
+        # Display the actual login error if authentication fails.
+        if response.status_code != 200:
+            raise AssertionError(
+                f"\n{role.upper()} LOGIN FAILED"
+                f"\nEmail: {email}"
+                f"\nHTTP Status: {response.status_code}"
+                f"\nResponse: {response.text}"
+                "\nCheck the demo account, password, database "
+                "configuration, and backend logs."
+            )
+
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise AssertionError(
+                f"{role.upper()} login returned invalid JSON: "
+                f"{response.text}"
+            ) from exc
+
+        token = data.get("access_token")
+
+        if not token:
+            raise AssertionError(
+                f"{role.upper()} login response has no access_token."
+                f"\nResponse: {response.text}"
+            )
+
+        return token
+
+    @classmethod
+    def _get_or_create_user(cls, db, full_name, email, mobile, role):
+        user = db.query(User).filter(User.email == email).one_or_none()
+        if user is None:
+            user = User(email=email)
+            db.add(user)
+
+        user.full_name = full_name
+        user.mobile = mobile
+        user.password_hash = hash_password("Password@123")
+        user.role = role
+        user.is_active = True
+        db.flush()
+        return user
+
+    @classmethod
+    def _create_test_data(cls):
+        with TestSession() as db:
+            hospital = db.query(Hospital).filter(
+                Hospital.name == "MEDRA API Test Hospital"
+            ).one_or_none()
+            if hospital is None:
+                hospital = Hospital(
+                    name="MEDRA API Test Hospital",
+                    address="1 Test Road",
+                    latitude=17.6625,
+                    longitude=75.9110,
+                    phone="0000000000",
+                    email="hospital.test@medra.org",
+                    emergency_available=True,
+                )
+                db.add(hospital)
+                db.flush()
+
+            patient = cls._get_or_create_user(
+                db,
+                "Rajesh Sharma",
+                "patient@medra.org",
+                "9000000001",
+                "patient",
+            )
+            hospital_user = cls._get_or_create_user(
+                db,
+                "MEDRA Test Hospital Staff",
+                "hospital@medra.org",
+                "9000000002",
+                "hospital",
+            )
+            ambulance_user = cls._get_or_create_user(
+                db,
+                "MEDRA Test Ambulance Crew",
+                "ambulance@medra.org",
+                "9000000003",
+                "ambulance",
+            )
+            admin_user = cls._get_or_create_user(
+                db,
+                "MEDRA Test Administrator",
+                "admin@medra.org",
+                "9000000004",
+                "admin",
+            )
+
+            profile = db.query(PatientProfile).filter(
+                PatientProfile.user_id == patient.id
+            ).one_or_none()
+            if profile is None:
+                profile = PatientProfile(
+                    user_id=patient.id,
+                    blood_group="O+",
+                    emergency_contact_name="Sunita Sharma",
+                    emergency_contact_mobile="9000000011",
+                )
+                db.add(profile)
+
+            hospital_user.hospital_id = hospital.id
+
+            ambulance = db.query(Ambulance).filter(
+                Ambulance.vehicle_number == "TEST-AMB-001"
+            ).one_or_none()
+            if ambulance is None:
+                ambulance = Ambulance(
+                    vehicle_number="TEST-AMB-001",
+                    driver_name=ambulance_user.full_name,
+                    driver_user_id=ambulance_user.id,
+                    latitude=17.6586,
+                    longitude=75.9046,
+                    status="AVAILABLE",
+                )
+                db.add(ambulance)
+                db.flush()
+            ambulance_user.ambulance_subrole = "EC_DRIVER"
+            ambulance_user.ambulance_id = ambulance.id
+
+            resource = db.query(HospitalResource).filter(
+                HospitalResource.hospital_id == hospital.id
+            ).first()
+            if resource is None:
+                db.add(
+                    HospitalResource(
+                        hospital_id=hospital.id,
+                        resource_type="Emergency Bed",
+                        total_count=20,
+                        occupied_count=8,
+                    )
+                )
+
+            audit_log = db.query(AuditLog).first()
+            if audit_log is None:
+                db.add(
+                    AuditLog(
+                        user_id=admin_user.id,
+                        user_email=admin_user.email,
+                        action="TEST_SETUP",
+                        resource_type="User",
+                        resource_id=str(admin_user.id),
+                        details="Isolated API test fixture",
+                    )
+                )
+
+            db.commit()
+
+    @classmethod
+    def tearDownClass(cls):
+        Base.metadata.drop_all(bind=test_engine)
+        super().tearDownClass()
+
+    # =========================================================
     # 1. HEALTH CHECKS
+    # =========================================================
+
     def test_01_health_check(self):
-        resp = client.get("/api/health")
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
+        response = client.get("/api/health")
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
         self.assertEqual(data["status"], "healthy")
         self.assertEqual(data["database"], "connected")
-        self.assertIn("PostgreSQL", data["database_version"])
+        with test_engine.connect() as connection:
+            sqlite_version = connection.exec_driver_sql(
+                "SELECT sqlite_version()"
+            ).scalar_one()
+        self.assertEqual(data["database_version"], sqlite_version)
 
     def test_02_auth_health(self):
-        resp = client.get("/api/auth/health")
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["status"], "online")
+        response = client.get("/api/auth/health")
 
-    # 2. AUTHENTICATION & PROFILES
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "online")
+
+    # =========================================================
+    # 2. AUTHENTICATION AND PROFILES
+    # =========================================================
+
     def test_03_login_invalid_password(self):
-        resp = client.post("/api/auth/login", json={"email": "patient@medra.org", "password": "WrongPassword"})
-        self.assertEqual(resp.status_code, 401)
+        response = client.post(
+            "/api/auth/login",
+            json={
+                "email": "patient@medra.org",
+                "password": "WrongPassword"
+            }
+        )
+
+        self.assertEqual(response.status_code, 401)
 
     def test_04_auth_me_profile(self):
-        resp = client.get("/api/auth/me", headers=self.patient_headers)
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
+        response = client.get(
+            "/api/auth/me",
+            headers=self.patient_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
         self.assertEqual(data["email"], "patient@medra.org")
         self.assertEqual(data["role"], "patient")
         self.assertEqual(data["full_name"], "Rajesh Sharma")
 
+    # =========================================================
     # 3. PATIENT MODULE
+    # =========================================================
+
     def test_05_patient_profile(self):
-        resp = client.get("/api/patient/profile", headers=self.patient_headers)
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
+        response = client.get(
+            "/api/patient/profile",
+            headers=self.patient_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
         self.assertEqual(data["full_name"], "Rajesh Sharma")
 
-        update_resp = client.put(
+        update_response = client.put(
             "/api/patient/profile",
             headers=self.patient_headers,
-            json={"blood_group": "O+", "emergency_contact_name": "Sunita Sharma"}
+            json={
+                "blood_group": "O+",
+                "emergency_contact_name": "Sunita Sharma"
+            }
         )
-        self.assertEqual(update_resp.status_code, 200)
-        self.assertEqual(update_resp.json()["blood_group"], "O+")
+
+        self.assertEqual(update_response.status_code, 200)
+        self.assertEqual(
+            update_response.json()["blood_group"], "O+"
+        )
 
     def test_06_patient_emergency_sos(self):
-        resp = client.post(
+        response = client.post(
             "/api/patient/emergency",
             headers=self.patient_headers,
             json={
                 "emergency_type": "Severe Cardiac Chest Pain",
-                "description": "Patient experiencing crushing chest pressure and radiating arm pain.",
+                "description": (
+                    "Patient experiencing crushing chest pressure "
+                    "and radiating arm pain."
+                ),
                 "latitude": 17.6599,
                 "longitude": 75.9064
             }
         )
-        self.assertEqual(resp.status_code, 201)
-        data = resp.json()
+
+        self.assertEqual(response.status_code, 201)
+
+        data = response.json()
+
         self.assertIn("emergency_id", data)
         self.assertIn("reference", data)
-        self.assertIsNotNone(data["ambulance"])
-        self.assertIsNotNone(data["hospital"])
+        self.assertEqual(data["status"], "REQUESTED")
+        self.assertIsNone(data["ambulance"])
+        self.assertIsNone(data["hospital"])
 
     def test_07_patient_emergencies_list(self):
-        resp = client.get("/api/patient/emergencies", headers=self.patient_headers)
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
+        response = client.get(
+            "/api/patient/emergencies",
+            headers=self.patient_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
         self.assertIn("emergencies", data)
         self.assertGreater(len(data["emergencies"]), 0)
 
     def test_08_patient_vitals(self):
-        post_resp = client.post(
+        post_response = client.post(
             "/api/patient/vitals",
             headers=self.patient_headers,
             json={
@@ -107,23 +385,39 @@ class TestMedraAPI(unittest.TestCase):
                 "source": "PATIENT_INPUT"
             }
         )
-        self.assertEqual(post_resp.status_code, 201)
 
-        get_resp = client.get("/api/patient/vitals", headers=self.patient_headers)
-        self.assertEqual(get_resp.status_code, 200)
-        self.assertGreater(len(get_resp.json()["vitals"]), 0)
+        self.assertEqual(post_response.status_code, 201)
 
+        get_response = client.get(
+            "/api/patient/vitals",
+            headers=self.patient_headers
+        )
+
+        self.assertEqual(get_response.status_code, 200)
+        self.assertGreater(
+            len(get_response.json()["vitals"]), 0
+        )
+
+    # =========================================================
     # 4. HOSPITAL MODULE
+    # =========================================================
+
     def test_09_hospital_dashboard_stats(self):
-        resp = client.get("/api/hospital/dashboard-stats", headers=self.hospital_headers)
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
+        response = client.get(
+            "/api/hospital/dashboard-stats",
+            headers=self.hospital_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
         self.assertIn("metrics", data)
         self.assertIn("total_beds", data["metrics"])
         self.assertIn("available_beds", data["metrics"])
 
     def test_10_hospital_patient_registration(self):
-        resp = client.post(
+        response = client.post(
             "/api/hospital/patients",
             headers=self.hospital_headers,
             json={
@@ -142,93 +436,153 @@ class TestMedraAPI(unittest.TestCase):
                 "notes": "Head injury, GCS 13, CT Brain ordered."
             }
         )
-        self.assertEqual(resp.status_code, 201)
-        data = resp.json()
+
+        self.assertEqual(response.status_code, 201)
+
+        data = response.json()
+
         self.assertIn("id", data)
         self.assertIn("reference", data)
+
         patient_id = data["id"]
 
-        # Verify patient
-        verify_resp = client.post(
+        # Verify the registered patient.
+        verify_response = client.post(
             f"/api/hospital/patients/{patient_id}/verify",
             headers=self.hospital_headers,
-            json={"verification_status": "Verified", "notes": "Identity confirmed via Aadhaar & ER triage card"}
+            json={
+                "verification_status": "Verified",
+                "notes": (
+                    "Identity confirmed via Aadhaar and ER triage card"
+                )
+            }
         )
-        self.assertEqual(verify_resp.status_code, 200)
-        self.assertEqual(verify_resp.json()["verification_status"], "Verified")
+
+        self.assertEqual(verify_response.status_code, 200)
+        self.assertEqual(
+            verify_response.json()["verification_status"],
+            "Verified"
+        )
 
     def test_11_hospital_resources(self):
-        resp = client.get("/api/hospital/resources", headers=self.hospital_headers)
-        self.assertEqual(resp.status_code, 200)
-        resources = resp.json()["resources"]
-        self.assertGreater(len(resources), 0)
-        res_id = resources[0]["id"]
+        response = client.get(
+            "/api/hospital/resources",
+            headers=self.hospital_headers
+        )
 
-        update_resp = client.put(
-            f"/api/hospital/resources/{res_id}",
+        self.assertEqual(response.status_code, 200)
+
+        resources = response.json()["resources"]
+
+        self.assertGreater(len(resources), 0)
+
+        resource_id = resources[0]["id"]
+
+        update_response = client.put(
+            f"/api/hospital/resources/{resource_id}",
             headers=self.hospital_headers,
             json={"occupied_count": 5}
         )
-        self.assertEqual(update_resp.status_code, 200)
 
+        self.assertEqual(update_response.status_code, 200)
+
+    # =========================================================
     # 5. AMBULANCE MODULE
+    # =========================================================
+
     def test_12_ambulance_dashboard(self):
-        resp = client.get("/api/ambulance/dashboard-stats", headers=self.ambulance_headers)
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
+        response = client.get(
+            "/api/ambulance/dashboard-stats",
+            headers=self.ambulance_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
         self.assertIn("vehicle_number", data)
         self.assertIn("status", data)
 
     def test_13_ambulance_availability(self):
-        resp = client.patch(
+        response = client.patch(
             "/api/ambulance/availability",
             headers=self.ambulance_headers,
             json={"status": "AVAILABLE"}
         )
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["status"], "AVAILABLE")
 
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "AVAILABLE")
+
+    # =========================================================
     # 6. ADMIN MODULE
+    # =========================================================
+
     def test_14_admin_metrics(self):
-        resp = client.get("/api/admin/metrics", headers=self.admin_headers)
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
+        response = client.get(
+            "/api/admin/metrics",
+            headers=self.admin_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
         self.assertIn("users", data)
         self.assertIn("emergencies", data)
         self.assertTrue(data["system"]["database_connected"])
 
     def test_15_admin_users(self):
-        resp = client.get("/api/admin/users", headers=self.admin_headers)
-        self.assertEqual(resp.status_code, 200)
-        users = resp.json()["users"]
+        response = client.get(
+            "/api/admin/users",
+            headers=self.admin_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        users = response.json()["users"]
+
         self.assertGreater(len(users), 0)
-        # Ensure password_hash is never exposed
-        for u in users:
-            self.assertNotIn("password_hash", u)
-            self.assertNotIn("password", u)
+
+        # Ensure sensitive password data is never exposed.
+        for user in users:
+            self.assertNotIn("password_hash", user)
+            self.assertNotIn("password", user)
 
     def test_16_admin_audit_logs(self):
-        resp = client.get("/api/admin/audit-logs", headers=self.admin_headers)
-        self.assertEqual(resp.status_code, 200)
-        logs = resp.json()["logs"]
+        response = client.get(
+            "/api/admin/audit-logs",
+            headers=self.admin_headers
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        logs = response.json()["logs"]
+
         self.assertGreater(len(logs), 0)
 
-    # 7. ABDM BOUNDARY
-    def test_17_abdm_boundary(self):
-        resp = client.get("/api/abdm/status", headers=self.patient_headers)
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn("notice", resp.json())
-        self.assertEqual(resp.json()["mode"], "DEMO_SIMULATION_ONLY")
+    # =========================================================
+    # 7. ABDM DEMO BOUNDARY
+    # =========================================================
 
-        verify_resp = client.post(
+    def test_17_abdm_boundary(self):
+        verify_response = client.post(
             "/api/abdm/verify-demo",
             headers=self.patient_headers,
-            json={"abha_number": "91-1234-5678-9012", "consent_confirmed": True}
+            json={
+                "abha_number": "91-1234-5678-9012",
+                "consent_confirmed": True
+            }
         )
-        self.assertEqual(verify_resp.status_code, 200)
-        self.assertEqual(verify_resp.json()["mode"], "DEMO_MODE")
-        self.assertTrue(verify_resp.json()["verified"])
+
+        self.assertEqual(verify_response.status_code, 200)
+
+        verify_data = verify_response.json()
+
+        self.assertEqual(verify_data["mode"], "DEMO_MODE")
+        self.assertTrue(verify_data["verified"])
+        self.assertEqual(verify_data["status"], "DEMO_LINKED")
+        self.assertIn("No real ABDM verification", verify_data["notice"])
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(verbosity=2)

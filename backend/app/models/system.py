@@ -27,6 +27,26 @@ class Notification(Base):
     user = relationship("User")
 
 
+class NotificationRead(Base):
+    __tablename__ = "notification_reads"
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    notification_id = Column(
+        Integer,
+        ForeignKey("notifications.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    read_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 

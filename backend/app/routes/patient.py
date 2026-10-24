@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_patient, log_audit
 from app.models.user import User
 from app.models.patient_profile import PatientProfile
+from app.models.family_member import FamilyMember
 from app.models.medra_demo import (
     DemoMedicalRecord,
     Emergency,
@@ -20,7 +21,8 @@ from app.models.medra_demo import (
 )
 from app.models.vitals import VitalObservation
 from app.models.hospital import HospitalResource
-from app.models.system import Notification
+from app.models.system import Notification, NotificationRead
+from app.schemas.family import FamilyMemberCreate, FamilyMemberUpdate
 from app.schemas.patient_profile import PatientProfileUpdate
 from app.schemas.patient_ops import (
     EmergencyCreateRequest,
@@ -377,7 +379,33 @@ def get_active_patient_emergency(
     )
 
     if not emergency:
-        return {"has_active": False, "emergency": None}
+        latest_emergency = (
+            db.query(Emergency)
+            .filter(Emergency.user_id == user.id)
+            .order_by(desc(Emergency.created_at))
+            .first()
+        )
+        if latest_emergency is None:
+            return {"has_active": False, "emergency": None}
+
+        return {
+            "has_active": False,
+            "emergency": {
+                "id": latest_emergency.id,
+                "reference": f"MEDRA-EMG-{latest_emergency.id:04d}",
+                "emergency_type": latest_emergency.emergency_type,
+                "description": latest_emergency.description,
+                "status": latest_emergency.status,
+                "priority": latest_emergency.priority,
+                "latitude": latest_emergency.latitude,
+                "longitude": latest_emergency.longitude,
+                "created_at": (
+                    latest_emergency.created_at.isoformat()
+                    if latest_emergency.created_at
+                    else None
+                ),
+            },
+        }
 
     assignment = emergency.assignment
 
@@ -668,6 +696,9 @@ def get_patient_notifications(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_patient),
 ):
+    if user.role != "patient":
+        raise HTTPException(status_code=403, detail="Patient account required")
+
     notifications = (
         db.query(Notification)
         .filter(
@@ -681,24 +712,242 @@ def get_patient_notifications(
             )
         )
         .order_by(desc(Notification.created_at))
-        .limit(15)
         .all()
     )
+    shared_read_ids = {
+        notification_id
+        for (notification_id,) in db.query(NotificationRead.notification_id).filter(
+            NotificationRead.user_id == user.id,
+        ).all()
+    }
+    serialized_notifications = []
+    for notification in notifications:
+        is_read = (
+            notification.is_read
+            if notification.user_id == user.id
+            else notification.id in shared_read_ids
+        )
+        serialized_notifications.append({
+            "id": notification.id,
+            "title": notification.title,
+            "message": notification.message,
+            "type": notification.type,
+            "is_read": is_read,
+            "can_mark_read": True,
+            "created_at": (
+                notification.created_at.isoformat()
+                if notification.created_at
+                else None
+            ),
+        })
 
     return {
-        "notifications": [
-            {
-                "id": notification.id,
-                "title": notification.title,
-                "message": notification.message,
-                "type": notification.type,
-                "is_read": notification.is_read,
-                "created_at": (
-                    notification.created_at.isoformat()
-                    if notification.created_at
-                    else None
-                ),
-            }
-            for notification in notifications
-        ]
+        "unread_count": sum(
+            not notification["is_read"]
+            for notification in serialized_notifications
+        ),
+        "notifications": serialized_notifications,
     }
+
+
+def _require_patient_owner(user: User) -> None:
+    if user.role != "patient":
+        raise HTTPException(status_code=403, detail="Patient account required")
+
+
+def _family_member_response(member: FamilyMember) -> dict:
+    return {
+        "id": member.id,
+        "full_name": member.full_name,
+        "relationship": member.relation,
+        "mobile": member.mobile,
+        "email": member.email,
+        "created_at": member.created_at.isoformat() if member.created_at else None,
+    }
+
+
+@router.get("/family-members")
+def get_family_members(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_patient),
+):
+    _require_patient_owner(user)
+    members = (
+        db.query(FamilyMember)
+        .filter(FamilyMember.user_id == user.id)
+        .order_by(FamilyMember.full_name, FamilyMember.id)
+        .all()
+    )
+    return {"family_members": [_family_member_response(member) for member in members]}
+
+
+@router.post("/family-members", status_code=status.HTTP_201_CREATED)
+def create_family_member(
+    request: FamilyMemberCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_patient),
+):
+    _require_patient_owner(user)
+    member = FamilyMember(
+        user_id=user.id,
+        full_name=request.full_name,
+        relation=request.relationship,
+        mobile=request.mobile,
+        email=str(request.email) if request.email else None,
+    )
+    db.add(member)
+    db.commit()
+    db.refresh(member)
+    log_audit(
+        db,
+        action="FAMILY_MEMBER_CREATED",
+        resource_type="FamilyMember",
+        user=user,
+        resource_id=member.id,
+    )
+    return _family_member_response(member)
+
+
+@router.patch("/family-members/{member_id}")
+def update_family_member(
+    member_id: int,
+    request: FamilyMemberUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_patient),
+):
+    _require_patient_owner(user)
+    member = db.query(FamilyMember).filter(
+        FamilyMember.id == member_id,
+        FamilyMember.user_id == user.id,
+    ).first()
+    if member is None:
+        raise HTTPException(status_code=404, detail="Family member not found")
+
+    updates = request.model_dump(exclude_unset=True)
+    if "full_name" in updates:
+        member.full_name = updates["full_name"]
+    if "relationship" in updates:
+        member.relation = updates["relationship"]
+    if "mobile" in updates:
+        member.mobile = updates["mobile"]
+    if "email" in updates:
+        member.email = str(updates["email"]) if updates["email"] else None
+
+    db.commit()
+    db.refresh(member)
+    log_audit(
+        db,
+        action="FAMILY_MEMBER_UPDATED",
+        resource_type="FamilyMember",
+        user=user,
+        resource_id=member.id,
+    )
+    return _family_member_response(member)
+
+
+@router.delete("/family-members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_family_member(
+    member_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_patient),
+):
+    _require_patient_owner(user)
+    member = db.query(FamilyMember).filter(
+        FamilyMember.id == member_id,
+        FamilyMember.user_id == user.id,
+    ).first()
+    if member is None:
+        raise HTTPException(status_code=404, detail="Family member not found")
+
+    member_id_value = member.id
+    db.delete(member)
+    db.commit()
+    log_audit(
+        db,
+        action="FAMILY_MEMBER_DELETED",
+        resource_type="FamilyMember",
+        user=user,
+        resource_id=member_id_value,
+    )
+    return None
+
+
+@router.patch("/notifications/{notification_id}/read")
+def mark_patient_notification_read(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_patient),
+):
+    _require_patient_owner(user)
+    notification = db.query(Notification).filter(
+        Notification.id == notification_id,
+        (
+            (Notification.user_id == user.id)
+            | (
+                Notification.user_id.is_(None)
+                & (
+                    (Notification.role == "patient")
+                    | Notification.role.is_(None)
+                )
+            )
+        ),
+    ).first()
+    if notification is None:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    if notification.user_id == user.id:
+        notification.is_read = True
+    else:
+        read_state = db.query(NotificationRead).filter(
+            NotificationRead.user_id == user.id,
+            NotificationRead.notification_id == notification.id,
+        ).first()
+        if read_state is None:
+            db.add(NotificationRead(
+                user_id=user.id,
+                notification_id=notification.id,
+            ))
+    db.commit()
+    return {"id": notification.id, "is_read": True}
+
+
+@router.post("/notifications/read-all")
+def mark_all_patient_notifications_read(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_patient),
+):
+    _require_patient_owner(user)
+    notifications = db.query(Notification).filter(
+        (Notification.user_id == user.id)
+        | (
+            Notification.user_id.is_(None)
+            & (
+                (Notification.role == "patient")
+                | Notification.role.is_(None)
+            )
+        )
+    ).all()
+    shared_read_ids = {
+        notification_id
+        for (notification_id,) in db.query(NotificationRead.notification_id).filter(
+            NotificationRead.user_id == user.id,
+        ).all()
+    }
+    marked_read = 0
+    for notification in notifications:
+        is_read = (
+            notification.is_read
+            if notification.user_id == user.id
+            else notification.id in shared_read_ids
+        )
+        if is_read:
+            continue
+        if notification.user_id == user.id:
+            notification.is_read = True
+        else:
+            db.add(NotificationRead(
+                user_id=user.id,
+                notification_id=notification.id,
+            ))
+        marked_read += 1
+    db.commit()
+    return {"marked_read": marked_read, "unread_count": 0}

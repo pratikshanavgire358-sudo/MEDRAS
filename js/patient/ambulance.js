@@ -1,800 +1,266 @@
-/* =========================================================
-   MEDRA - PATIENT AMBULANCE TRACKING
-   Real Leaflet + OpenStreetMap Map
-========================================================= */
+"use strict";
 
-document.addEventListener("DOMContentLoaded", function () {
+let trackingMap;
+let trackingMarkers = [];
+let trackingLine = null;
+let trackingRequestInFlight = false;
+let latestEmergency = null;
 
-    /* =====================================================
-       1. MEDRA LOCATION DATA
-    ====================================================== */
-
-    // Patient location - Solapur
-    const patientLocation = [17.659920, 75.906430];
-
-    // Ambulance starting location
-    const ambulanceLocation = [17.658600, 75.904600];
-
-    // Destination hospital
-    const hospitalLocation = [17.662500, 75.911000];
-
-
-    /* =====================================================
-       2. CHECK LEAFLET
-    ====================================================== */
-
-    if (typeof L === "undefined") {
-
-        console.error("Leaflet library is not loaded.");
-
-        showToast(
-            "Map library could not be loaded.",
-            "error"
-        );
-
-        return;
-    }
-
-
-    /* =====================================================
-       3. CREATE MAP
-    ====================================================== */
+document.addEventListener("DOMContentLoaded", async () => {
+    if (typeof requireRoleAuth === "function" && !requireRoleAuth(["patient", "admin"])) return;
 
     const mapElement = document.getElementById("ambulanceMap");
+    if (mapElement && typeof L !== "undefined") {
+        trackingMap = L.map(mapElement).setView([20.5, 78.9], 5);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap contributors"
+        }).addTo(trackingMap);
+    }
 
-    if (!mapElement) {
+    document.getElementById("myLocationButton")?.addEventListener("click", showPatientLocation);
+    document.getElementById("refreshTracking")?.addEventListener("click", refreshTracking);
+    document.getElementById("callDriverButton")?.addEventListener("click", callDriver);
+    document.getElementById("shareLocationButton")?.addEventListener("click", shareEmergencyLocation);
+    renderTimeline(null);
+    document.getElementById("logoutButton")?.addEventListener("click", event => {
+        event.preventDefault();
+        if (typeof logoutMedra === "function") logoutMedra();
+    });
 
-        console.error(
-            "Element #ambulanceMap was not found."
-        );
+    await loadTrackingData();
+    window.setInterval(loadTrackingData, 10000);
+});
 
+async function loadTrackingData() {
+    if (trackingRequestInFlight || !window.MedraAPI) return;
+    trackingRequestInFlight = true;
+    try {
+        const response = await window.MedraAPI.get("/api/patient/emergencies/active");
+        latestEmergency = response?.emergency || null;
+        renderTracking(latestEmergency);
+    } catch (error) {
+        console.error("Emergency tracking refresh failed:", error);
+        setText("routeStatus", error.message || "Unable to refresh emergency status.");
+        if (typeof showNotification === "function") {
+            showNotification(error.message || "Unable to refresh emergency status.", "warning");
+        }
+    } finally {
+        trackingRequestInFlight = false;
+    }
+}
+
+function renderTracking(emergency) {
+    clearTrackingMap();
+    if (!emergency) {
+        setText("routeStatus", "No emergency request is currently on record.");
+        setText("distanceValue", "Unavailable");
+        setText("etaValue", "--");
+        setText("detailEta", "--");
+        setText("speedValue", "Unavailable");
+        setText("trackingEmergencyStatus", "No active emergency");
+        setText("trackingVehicleNumber", "Not assigned");
+        setText("trackingVehicleStatus", "Waiting for an ambulance");
+        setText("trackingDriverName", "Not assigned");
+        setText("trackingHospital", "Not selected");
+        setText("trackingLiveBadge", "STATUS UPDATES");
+        renderTimeline(null);
         return;
     }
 
+    const ambulance = emergency.ambulance;
+    const hospital = emergency.hospital;
+    const hasPickup = validCoordinates(emergency.latitude, emergency.longitude);
+    const hasAmbulance = ambulance && validCoordinates(ambulance.latitude, ambulance.longitude);
+    const hasHospital = hospital && validCoordinates(hospital.latitude, hospital.longitude);
+    const locationFresh = emergency.ambulance_location_updated_at
+        && isFreshLocation(emergency.ambulance_location_updated_at);
 
-    const map = L.map("ambulanceMap", {
-        zoomControl: true,
-        scrollWheelZoom: true
-    }).setView(patientLocation, 15);
+    setText("routeStatus", `${emergency.reference || "Emergency"} · ${emergency.status}`);
+    setText("distanceValue", hasPickup && hasAmbulance && locationFresh
+        ? `${straightLineDistance(ambulance.latitude, ambulance.longitude, emergency.latitude, emergency.longitude).toFixed(1)} km straight-line`
+        : "Unavailable");
+    setText("etaValue", "--");
+    setText("detailEta", "Unavailable");
+    setText("speedValue", "Unavailable");
+    setText("trackingEmergencyStatus", `${emergency.reference || ""} · ${emergency.status} · ${emergency.emergency_type || ""}`);
+    setText("trackingVehicleNumber", ambulance?.vehicle_number || "Not assigned");
+    setText("trackingVehicleStatus", ambulance
+        ? `${ambulance.status || "Assigned"}${locationFresh ? " · GPS current" : " · GPS unavailable or stale"}`
+        : "Waiting for an ambulance to accept");
+    setText("trackingVehicleSubstatus", ambulance
+    ? (locationFresh ? "GPS location is current" : "GPS unavailable or stale")
+    : "No ambulance assigned");
+    setText("trackingDriverName", ambulance?.driver_name || "Not assigned");
+    setText("trackingHospital", hospital ? `${hospital.name} · ${hospital.address}` : "Not selected by the ambulance crew");
+    setText("trackingLiveBadge", locationFresh ? "GPS UPDATED" : "STATUS UPDATES");
 
+    if (trackingMap) {
+        const points = [];
+        if (hasPickup) {
+            addTrackingMarker([Number(emergency.latitude), Number(emergency.longitude)], "Patient pickup location");
+            points.push([Number(emergency.latitude), Number(emergency.longitude)]);
+        }
+        if (hasAmbulance && locationFresh) {
+            addTrackingMarker(
+                [Number(ambulance.latitude), Number(ambulance.longitude)],
+                `Ambulance ${ambulance.vehicle_number} · GPS updated ${new Date(emergency.ambulance_location_updated_at).toLocaleTimeString()}`
+            );
+            points.push([Number(ambulance.latitude), Number(ambulance.longitude)]);
+        }
+        if (hasHospital) {
+            addTrackingMarker([Number(hospital.latitude), Number(hospital.longitude)], hospital.name);
+            points.push([Number(hospital.latitude), Number(hospital.longitude)]);
+        }
 
-    /* =====================================================
-       4. OPENSTREETMAP TILES
-    ====================================================== */
-
-   
-L.tileLayer(
-    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-    {
-        maxZoom: 20,
-
-        attribution:
-            '&copy; OpenStreetMap contributors &copy; CARTO'
+        if (points.length > 1) {
+            trackingLine = L.polyline(points, { color: "#08a878", weight: 4, dashArray: "8 8" }).addTo(trackingMap);
+            trackingMap.fitBounds(points, { padding: [40, 40] });
+        } else if (points.length === 1) {
+            trackingMap.setView(points[0], 14);
+        }
     }
-).addTo(map);
-    /* =====================================================
-       5. CUSTOM ICONS
-    ====================================================== */
+    renderTimeline(emergency);
+}
 
-    const patientIcon = L.divIcon({
+function renderTimeline(emergency) {
+    const timeline = document.querySelector(".response-timeline");
+    if (!timeline) return;
+    if (!emergency) {
+        timeline.textContent = "Emergency activity will appear here after an SOS is submitted.";
+        return;
+    }
 
-        className: "leaflet-patient-marker",
-
-        html: `
-            <div class="custom-map-marker patient-map-marker">
-                <i class="bi bi-person-fill"></i>
+    const statusSteps = [
+        ["REQUESTED", "Emergency request received"],
+        ["ACCEPTED", "Ambulance accepted"],
+        ["EN_ROUTE", "Ambulance en route"],
+        ["PATIENT_PICKED_UP", "Patient picked up"],
+        ["HOSPITAL_SELECTED", "Hospital selected"],
+        ["HOSPITAL_ACCEPTED", "Hospital accepted"],
+        ["HOSPITAL_ARRIVED", "Ambulance arrived"],
+        ["HOSPITAL_RECEIVED", "Patient received"],
+        ["RESOLVED", "Emergency resolved"]
+    ];
+    const currentIndex = statusSteps.findIndex(([status]) => status === emergency.status);
+    const createdAt = emergency.created_at && Number.isFinite(Date.parse(emergency.created_at))
+        ? new Date(emergency.created_at).toLocaleString()
+        : "Time unavailable";
+    timeline.innerHTML = statusSteps.map(([status, label], index) => {
+        const state = index < currentIndex ? "completed" : index === currentIndex ? "active" : "";
+        const timestamp = status === "REQUESTED" ? createdAt : index === currentIndex ? "Current status" : "Pending";
+        return `<div class="timeline-item ${state}">
+            <div class="timeline-icon">${index < currentIndex ? '<i class="bi bi-check-lg"></i>' : index + 1}</div>
+            <div class="timeline-content">
+                <strong>${escapeHtml(label)}</strong>
+                <p>${status === emergency.status ? escapeHtml(emergency.description || emergency.emergency_type || "") : ""}</p>
+                <small>${escapeHtml(timestamp)}</small>
             </div>
-        `,
+        </div>`;
+    }).join("");
+}
 
-        iconSize: [46, 46],
+function addTrackingMarker(coordinates, label) {
+    const marker = L.marker(coordinates).addTo(trackingMap).bindPopup(escapeHtml(label));
+    trackingMarkers.push(marker);
+}
 
-        iconAnchor: [23, 46],
+function clearTrackingMap() {
+    trackingMarkers.forEach(marker => marker.remove());
+    trackingMarkers = [];
+    if (trackingLine) {
+        trackingLine.remove();
+        trackingLine = null;
+    }
+}
 
-        popupAnchor: [0, -42]
-    });
+function validCoordinates(latitude, longitude) {
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    return latitude !== null && latitude !== undefined
+        && longitude !== null && longitude !== undefined
+        && Number.isFinite(lat) && Number.isFinite(lng)
+        && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
 
+function isFreshLocation(timestamp) {
+    const updatedAt = Date.parse(timestamp);
+    const age = Date.now() - updatedAt;
+    return Number.isFinite(updatedAt) && age >= 0 && age <= 120000;
+}
 
-    const ambulanceIcon = L.divIcon({
+function straightLineDistance(lat1, lng1, lat2, lng2) {
+    const radians = degrees => degrees * Math.PI / 180;
+    const dLat = radians(Number(lat2) - Number(lat1));
+    const dLng = radians(Number(lng2) - Number(lng1));
+    const a = Math.sin(dLat / 2) ** 2
+        + Math.cos(radians(Number(lat1))) * Math.cos(radians(Number(lat2))) * Math.sin(dLng / 2) ** 2;
+    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
-        className: "leaflet-ambulance-marker",
+function showPatientLocation() {
+    if (!trackingMap || !latestEmergency || !validCoordinates(latestEmergency.latitude, latestEmergency.longitude)) {
+        showTrackingMessage("Patient location is unavailable.");
+        return;
+    }
+    const point = [Number(latestEmergency.latitude), Number(latestEmergency.longitude)];
+    trackingMap.flyTo(point, 16);
+}
 
-        html: `
-            <div class="custom-map-marker ambulance-map-marker">
-                <i class="bi bi-truck-front-fill"></i>
-            </div>
-        `,
+async function refreshTracking() {
+    const button = document.getElementById("refreshTracking");
+    if (button) button.disabled = true;
+    try {
+        await loadTrackingData();
+    } finally {
+        if (button) button.disabled = false;
+    }
+}
 
-        iconSize: [52, 52],
+function callDriver() {
+    const mobile = latestEmergency?.ambulance?.driver_mobile;
+    if (!mobile) {
+        showTrackingMessage("A driver phone number is not available in your authorized emergency details.");
+        return;
+    }
+    window.location.href = `tel:${encodeURIComponent(mobile)}`;
+}
 
-        iconAnchor: [26, 52],
-
-        popupAnchor: [0, -48]
-    });
-
-
-    const hospitalIcon = L.divIcon({
-
-        className: "leaflet-hospital-marker",
-
-        html: `
-            <div class="custom-map-marker hospital-map-marker">
-                <i class="bi bi-hospital-fill"></i>
-            </div>
-        `,
-
-        iconSize: [46, 46],
-
-        iconAnchor: [23, 46],
-
-        popupAnchor: [0, -42]
-    });
-
-
-    /* =====================================================
-       6. PATIENT MARKER
-    ====================================================== */
-
-    const patientMarker = L.marker(
-        patientLocation,
-        {
-            icon: patientIcon
+async function shareEmergencyLocation() {
+    if (!latestEmergency || !validCoordinates(latestEmergency.latitude, latestEmergency.longitude)) {
+        showTrackingMessage("There is no saved emergency location to share.");
+        return;
+    }
+    const text = `MEDRA emergency ${latestEmergency.reference}: https://www.openstreetmap.org/?mlat=${latestEmergency.latitude}&mlon=${latestEmergency.longitude}`;
+    try {
+        if (navigator.share) {
+            await navigator.share({ title: "MEDRA emergency location", text });
+        } else if (navigator.clipboard) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            throw new Error("Location sharing is not supported by this browser.");
         }
-    )
-    .addTo(map)
-    .bindPopup(`
-        <div class="medra-map-popup">
-
-            <strong>
-                <i class="bi bi-person-fill"></i>
-                Your Location
-            </strong>
-
-            <p>
-                Emergency patient location
-            </p>
-
-        </div>
-    `);
-
-
-    /* =====================================================
-       7. AMBULANCE MARKER
-    ====================================================== */
-
-    const ambulanceMarker = L.marker(
-        ambulanceLocation,
-        {
-            icon: ambulanceIcon
-        }
-    )
-    .addTo(map)
-    .bindPopup(`
-        <div class="medra-map-popup">
-
-            <strong>
-                <i class="bi bi-truck-front-fill"></i>
-                Ambulance AMB-102
-            </strong>
-
-            <p>
-                Status:
-                <b>En Route</b>
-            </p>
-
-            <p>
-                Emergency Response Team
-            </p>
-
-        </div>
-    `);
-
-
-    /* =====================================================
-       8. HOSPITAL MARKER
-    ====================================================== */
-
-    const hospitalMarker = L.marker(
-        hospitalLocation,
-        {
-            icon: hospitalIcon
-        }
-    )
-    .addTo(map)
-    .bindPopup(`
-        <div class="medra-map-popup">
-
-            <strong>
-                <i class="bi bi-hospital-fill"></i>
-                City Civil Hospital
-            </strong>
-
-            <p>
-                Emergency destination
-            </p>
-
-            <p>
-                Hospital status:
-                <b>Ready</b>
-            </p>
-
-        </div>
-    `);
-
-
-    /* =====================================================
-       9. ROUTE LINE
-    ====================================================== */
-
-    const routeLine = L.polyline(
-    [
-        ambulanceLocation,
-        patientLocation,
-        hospitalLocation
-    ],
-    {
-        color: "#08a878",
-        weight: 5,
-        opacity: 0.9,
-        dashArray: "12 8",
-        lineJoin: "round",
-        lineCap: "round"
+        showTrackingMessage("Saved emergency location shared.");
+    } catch (error) {
+        if (error.name !== "AbortError") showTrackingMessage(error.message || "Unable to share emergency location.");
     }
-).addTo(map);
-
-    /* =====================================================
-       10. FIT MAP TO ALL MARKERS
-    ====================================================== */
-
-    const routeBounds = L.latLngBounds([
-
-        ambulanceLocation,
-        patientLocation,
-        hospitalLocation
-
-    ]);
-
-    map.fitBounds(routeBounds, {
-        padding: [50, 50]
-    });
-
-
-    /* =====================================================
-       11. DISTANCE CALCULATION
-    ====================================================== */
-
-    function calculateDistance(
-        lat1,
-        lon1,
-        lat2,
-        lon2
-    ) {
-
-        const R = 6371;
-
-        const dLat =
-            (lat2 - lat1) *
-            Math.PI / 180;
-
-        const dLon =
-            (lon2 - lon1) *
-            Math.PI / 180;
-
-
-        const a =
-            Math.sin(dLat / 2) *
-            Math.sin(dLat / 2) +
-
-            Math.cos(lat1 * Math.PI / 180) *
-            Math.cos(lat2 * Math.PI / 180) *
-
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
-
-
-        const c =
-            2 *
-            Math.atan2(
-                Math.sqrt(a),
-                Math.sqrt(1 - a)
-            );
-
-
-        return R * c;
-    }
-
-
-    /* =====================================================
-       12. UPDATE DISTANCE
-    ====================================================== */
-
-    function updateDistance() {
-
-        const distance = calculateDistance(
-
-            ambulanceLocation[0],
-            ambulanceLocation[1],
-
-            patientLocation[0],
-            patientLocation[1]
-
-        );
-
-
-        const distanceElement =
-            document.getElementById("distanceValue");
-
-
-        if (distanceElement) {
-
-            distanceElement.textContent =
-                distance.toFixed(2) + " km";
-        }
-
-
-        return distance;
-    }
-
-
-    updateDistance();
-
-
-    /* =====================================================
-       13. ETA
-    ====================================================== */
-
-    function updateETA() {
-
-        const distance =
-            calculateDistance(
-
-                ambulanceLocation[0],
-                ambulanceLocation[1],
-
-                patientLocation[0],
-                patientLocation[1]
-            );
-
-
-        // Demo average emergency speed
-        const averageSpeed = 40;
-
-        const etaMinutes =
-            Math.max(
-                1,
-                Math.round(
-                    (distance / averageSpeed) * 60
-                )
-            );
-
-
-        const etaValue =
-            document.getElementById("etaValue");
-
-        const detailEta =
-            document.getElementById("detailEta");
-
-
-        if (etaValue) {
-
-            etaValue.textContent =
-                String(etaMinutes).padStart(2, "0");
-        }
-
-
-        if (detailEta) {
-
-            detailEta.textContent =
-                etaMinutes;
-        }
-
-    }
-
-
-    updateETA();
-
-
-    /* =====================================================
-       14. MY LOCATION BUTTON
-    ====================================================== */
-
-    const myLocationButton =
-        document.getElementById(
-            "myLocationButton"
-        );
-
-
-    if (myLocationButton) {
-
-        myLocationButton.addEventListener(
-            "click",
-            function () {
-
-                map.flyTo(
-                    patientLocation,
-                    17,
-                    {
-                        duration: 1.2
-                    }
-                );
-
-                patientMarker.openPopup();
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       15. REFRESH TRACKING
-    ====================================================== */
-
-    const refreshButton =
-        document.getElementById(
-            "refreshTracking"
-        );
-
-
-    if (refreshButton) {
-
-        refreshButton.addEventListener(
-            "click",
-            function () {
-
-                refreshButton.innerHTML = `
-                    <i class="bi bi-arrow-repeat"></i>
-                    Updating...
-                `;
-
-
-                setTimeout(function () {
-
-                    updateDistance();
-
-                    updateETA();
-
-
-                    refreshButton.innerHTML = `
-                        <i class="bi bi-check-lg"></i>
-                        Updated
-                    `;
-
-
-                    showToast(
-                        "Ambulance location updated.",
-                        "success"
-                    );
-
-
-                    setTimeout(function () {
-
-                        refreshButton.innerHTML = `
-                            <i class="bi bi-arrow-clockwise"></i>
-                            Refresh
-                        `;
-
-                    }, 1500);
-
-
-                }, 800);
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       16. CALL DRIVER
-    ====================================================== */
-
-    const callDriverButton =
-        document.getElementById(
-            "callDriverButton"
-        );
-
-
-    if (callDriverButton) {
-
-        callDriverButton.addEventListener(
-            "click",
-            function () {
-
-                window.location.href =
-                    "tel:+919999999999";
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       17. SHARE LOCATION
-    ====================================================== */
-
-    const shareLocationButton =
-        document.getElementById(
-            "shareLocationButton"
-        );
-
-
-    if (shareLocationButton) {
-
-        shareLocationButton.addEventListener(
-            "click",
-            async function () {
-
-                const locationText =
-                    "MEDRA Emergency Location\n" +
-                    "Patient: Solapur\n" +
-                    "Ambulance: AMB-102";
-
-
-                try {
-
-                    if (
-                        navigator.clipboard
-                    ) {
-
-                        await navigator.clipboard.writeText(
-                            locationText
-                        );
-
-                        showToast(
-                            "Location copied successfully.",
-                            "success"
-                        );
-
-                    }
-
-                }
-
-                catch (error) {
-
-                    console.error(error);
-
-                    showToast(
-                        "Unable to share location.",
-                        "error"
-                    );
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       18. NOTIFICATION BUTTON
-    ====================================================== */
-
-    const notificationButton =
-        document.getElementById(
-            "notificationButton"
-        );
-
-
-    if (notificationButton) {
-
-        notificationButton.addEventListener(
-            "click",
-            function () {
-
-                window.location.href =
-                    "notifications.html";
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       19. LOGOUT
-    ====================================================== */
-
-    const logoutButton =
-        document.getElementById(
-            "logoutButton"
-        );
-
-
-    if (logoutButton) {
-
-        logoutButton.addEventListener(
-            "click",
-            function () {
-
-                sessionStorage.removeItem(
-                    "medraAuthenticated"
-                );
-
-                sessionStorage.removeItem(
-                    "medraRole"
-                );
-
-                window.location.href =
-                    "../auth/login.html";
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       20. SIMULATED LIVE AMBULANCE MOVEMENT
-       
-       DEMO ONLY.
-       Later replace this with WebSocket GPS data.
-    ====================================================== */
-
-    let progress = 0;
-
-
-    function simulateAmbulanceMovement() {
-
-        progress += 0.015;
-
-
-        if (progress >= 1) {
-
-            progress = 0;
-
-        }
-
-
-        const lat =
-            ambulanceLocation[0] +
-            (
-                patientLocation[0] -
-                ambulanceLocation[0]
-            ) * progress;
-
-
-        const lng =
-            ambulanceLocation[1] +
-            (
-                patientLocation[1] -
-                ambulanceLocation[1]
-            ) * progress;
-
-
-        ambulanceMarker.setLatLng([
-            lat,
-            lng
-        ]);
-
-
-        /* Update speed */
-
-        const speedElement =
-            document.getElementById(
-                "speedValue"
-            );
-
-
-        if (speedElement) {
-
-            const speed =
-                38 +
-                Math.floor(
-                    Math.random() * 10
-                );
-
-            speedElement.textContent =
-                speed + " km/h";
-
-        }
-
-    }
-
-
-    /*
-       Move ambulance every 5 seconds.
-       This is only for frontend demonstration.
-    */
-
-    setInterval(
-        simulateAmbulanceMovement,
-        5000
-    );
-
-
-    /* =====================================================
-       21. TOAST FUNCTION
-    ====================================================== */
-
-    function showToast(
-        message,
-        type = "success"
-    ) {
-
-        let toast =
-            document.getElementById(
-                "medraToast"
-            );
-
-
-        if (!toast) {
-
-            toast =
-                document.createElement(
-                    "div"
-                );
-
-            toast.id =
-                "medraToast";
-
-            toast.className =
-                "medra-toast";
-
-            document.body.appendChild(
-                toast
-            );
-
-        }
-
-
-        toast.className =
-            "medra-toast " + type;
-
-
-        toast.innerHTML = `
-
-            <i class="bi ${
-                type === "success"
-                    ? "bi-check-circle-fill"
-                    : "bi-exclamation-circle-fill"
-            }"></i>
-
-            <span>
-                ${message}
-            </span>
-
-        `;
-
-
-        toast.classList.add(
-            "show"
-        );
-
-
-        setTimeout(function () {
-
-            toast.classList.remove(
-                "show"
-            );
-
-        }, 3000);
-
-    }
-
-
-    /* =====================================================
-       22. MAP LOADED
-    ====================================================== */
-
-    console.log(
-        "MEDRA real Leaflet map initialized."
-    );
-
-    console.log(
-        "Patient:",
-        patientLocation
-    );
-
-    console.log(
-        "Ambulance:",
-        ambulanceLocation
-    );
-
-    console.log(
-        "Hospital:",
-        hospitalLocation
-    );
-
-});
+}
+
+function showTrackingMessage(message) {
+    if (typeof showNotification === "function") showNotification(message, "info");
+    else window.alert(message);
+}
+
+function setText(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value ?? "";
+}
+
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[character]);
+}

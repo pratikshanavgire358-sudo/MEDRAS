@@ -10,6 +10,7 @@ from app.models.user import User
 from app.models.hospital import HospitalPatient, HospitalResource
 from app.models.medra_demo import Emergency, Ambulance, Hospital, EmergencyAssignment
 from app.models.system import AuditLog
+from app.schemas.ambulance_ops import AmbulanceCrewAssignment
 from app.core.dependencies import get_current_admin, log_audit
 
 router = APIRouter(
@@ -24,6 +25,10 @@ class UserStatusUpdate(BaseModel):
 
 class UserRoleUpdate(BaseModel):
     role: Literal["patient", "ambulance", "hospital", "admin"]
+
+
+class HospitalStaffAssignment(BaseModel):
+    hospital_id: int | None
 
 
 @router.get("/metrics")
@@ -109,6 +114,9 @@ def get_admin_users(
             "email": u.email,
             "mobile": u.mobile or "Not provided",
             "role": u.role,
+            "ambulance_subrole": u.ambulance_subrole,
+            "ambulance_id": u.ambulance_id,
+            "hospital_id": u.hospital_id,
             "is_active": u.is_active,
             "created_at": u.created_at.isoformat() if u.created_at else None,
         })
@@ -162,7 +170,15 @@ def update_user_role(
         raise HTTPException(status_code=404, detail="User not found")
 
     old_role = target.role
+    if target.ambulance_subrole == "EC_DRIVER":
+        db.query(Ambulance).filter(Ambulance.driver_user_id == target.id).update(
+            {Ambulance.driver_user_id: None}
+        )
+    target.ambulance_subrole = None
+    target.ambulance_id = None
     target.role = request.role
+    if request.role != "hospital":
+        target.hospital_id = None
     db.commit()
     db.refresh(target)
 
@@ -179,6 +195,100 @@ def update_user_role(
         "message": f"User role changed to {target.role}",
         "id": target.id,
         "role": target.role
+    }
+
+
+@router.get("/hospitals")
+def get_admin_hospitals(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    hospitals = db.query(Hospital).order_by(Hospital.name).all()
+    return {
+        "hospitals": [
+            {
+                "id": hospital.id,
+                "name": hospital.name,
+                "address": hospital.address,
+                "emergency_available": hospital.emergency_available,
+            }
+            for hospital in hospitals
+        ]
+    }
+
+
+@router.patch("/users/{user_id}/hospital")
+def assign_hospital_staff(
+    user_id: int,
+    request: HospitalStaffAssignment,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    if target.role != "hospital":
+        raise HTTPException(status_code=409, detail="Only hospital staff accounts can be assigned to a hospital")
+
+    if request.hospital_id is not None:
+        hospital = db.query(Hospital).filter(Hospital.id == request.hospital_id).first()
+        if not hospital:
+            raise HTTPException(status_code=404, detail="Hospital not found")
+    target.hospital_id = request.hospital_id
+    db.commit()
+    db.refresh(target)
+    log_audit(
+        db,
+        action="HOSPITAL_STAFF_ASSIGNED",
+        resource_type="User",
+        user=admin,
+        resource_id=target.id,
+        details=f"Hospital ID: {target.hospital_id}",
+    )
+    return {"user_id": target.id, "hospital_id": target.hospital_id}
+
+
+@router.put("/users/{user_id}/ambulance-crew")
+def assign_ambulance_crew(
+    user_id: int,
+    request: AmbulanceCrewAssignment,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    target = db.query(User).filter(User.id == user_id).with_for_update().first()
+    ambulance = db.query(Ambulance).filter(Ambulance.id == request.ambulance_id).with_for_update().first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Crew account not found")
+    if not ambulance:
+        raise HTTPException(status_code=404, detail="Ambulance not found")
+    if target.role != "ambulance":
+        raise HTTPException(status_code=409, detail="Crew account must have the ambulance role")
+    if request.subrole == "EC_DRIVER" and ambulance.driver_user_id not in (None, target.id):
+        raise HTTPException(status_code=409, detail="Ambulance already has a different assigned driver")
+
+    if target.ambulance_subrole == "EC_DRIVER":
+        db.query(Ambulance).filter(Ambulance.driver_user_id == target.id).update(
+            {Ambulance.driver_user_id: None}
+        )
+    target.ambulance_id = ambulance.id
+    target.ambulance_subrole = request.subrole
+    if request.subrole == "EC_DRIVER":
+        ambulance.driver_user_id = target.id
+
+    db.commit()
+    log_audit(
+        db,
+        action="AMBULANCE_CREW_ASSIGNED",
+        resource_type="User",
+        user=admin,
+        resource_id=target.id,
+        details=f"Ambulance crew subrole {request.subrole} assigned to ambulance {ambulance.id}",
+    )
+    return {
+        "message": "Ambulance crew assignment saved",
+        "user_id": target.id,
+        "ambulance_id": ambulance.id,
+        "subrole": target.ambulance_subrole,
     }
 
 

@@ -23,24 +23,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const markArrivedBtn = document.getElementById("markEmergencyArrived");
     const markReceivedBtn = document.getElementById("markEmergencyReceived");
+    const markResolvedBtn = document.getElementById("markEmergencyResolved");
     const actionMessage = document.getElementById("emergencyActionMessage");
 
     let loadedEmergencies = [];
     let selectedEmergency = null;
+    let isLoading = false;
 
     async function loadEmergencies() {
         const api = window.MedraAPI;
-        if (!api) return;
+        if (!api || isLoading) return;
+        isLoading = true;
 
         try {
             const data = await api.get("/api/hospital/emergencies");
             loadedEmergencies = data.emergencies || [];
+            if (selectedEmergency) {
+                selectedEmergency = loadedEmergencies.find(item => item.id === selectedEmergency.id) || selectedEmergency;
+            }
             applyFilters();
         } catch (err) {
             console.error("Emergencies fetch error:", err);
             if (typeof showNotification === "function") {
                 showNotification(err.message || "Unable to fetch emergency queue.", "error");
             }
+        } finally {
+            isLoading = false;
         }
     }
 
@@ -50,13 +58,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         const sFilter = statusFilter?.value || "";
 
         const filtered = loadedEmergencies.filter(e => {
-            const matchQuery = !query || 
-                e.reference.toLowerCase().includes(query) ||
-                e.type.toLowerCase().includes(query) ||
-                (e.patient_name && e.patient_name.toLowerCase().includes(query)) ||
-                (e.ambulance_vehicle && e.ambulance_vehicle.toLowerCase().includes(query));
+            const matchQuery = !query ||
+                String(e.reference || "").toLowerCase().includes(query) ||
+                String(e.type || "").toLowerCase().includes(query) ||
+                String(e.patient_name || "").toLowerCase().includes(query) ||
+                String(e.ambulance_vehicle || "").toLowerCase().includes(query);
 
-            const matchPriority = !pFilter || e.priority === pFilter;
+            const matchPriority = !pFilter || String(e.priority || "").toUpperCase() === pFilter.toUpperCase();
             const matchStatus = !sFilter || e.status === sFilter;
 
             return matchQuery && matchPriority && matchStatus;
@@ -86,17 +94,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                 tr.classList.add("selected-row");
             }
 
-            const priorityClass = e.priority === "Critical" ? "badge bg-danger" : "badge bg-warning text-dark";
-            const statusClass = e.status === "ARRIVED" ? "badge bg-success" : "badge bg-info text-dark";
+            const priorityClass = String(e.priority).toUpperCase() === "CRITICAL" ? "badge bg-danger" : "badge bg-warning text-dark";
+            const statusClass = ["HOSPITAL_ARRIVED", "HOSPITAL_RECEIVED", "RESOLVED"].includes(e.status)
+                ? "badge bg-success"
+                : "badge bg-info text-dark";
+            const createdAt = e.created_at && Number.isFinite(Date.parse(e.created_at))
+                ? new Date(e.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                : "Time unavailable";
 
             tr.innerHTML = `
-                <td><strong>${e.reference}</strong></td>
-                <td>${e.patient_name}</td>
-                <td>${e.type}</td>
-                <td><span class="${priorityClass}">${e.priority}</span></td>
-                <td><span class="${statusClass}">${e.status}</span></td>
-                <td>${e.ambulance_vehicle}</td>
-                <td>${e.created_at ? new Date(e.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}</td>
+                <td><strong>${escapeHtml(e.reference)}</strong></td>
+                <td>${escapeHtml(e.patient_name)}</td>
+                <td>${escapeHtml(e.type)}</td>
+                <td><span class="${priorityClass}">${escapeHtml(e.priority)}</span></td>
+                <td><span class="${statusClass}">${escapeHtml(e.status)}</span></td>
+                <td>${escapeHtml(e.ambulance_vehicle)}</td>
+                <td>${escapeHtml(createdAt)}</td>
             `;
 
             tr.addEventListener("click", () => selectEmergency(e));
@@ -113,6 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         setFieldText("selectedEmergencyPriority", e.priority);
         setFieldText("selectedEmergencyStatus", e.status);
         setFieldText("selectedEmergencyDescription", e.description || "Emergency dispatch alert");
+        updateActionAvailability(e.status);
 
         // Highlight selected
         document.querySelectorAll("#emergencyTableBody tr").forEach(row => row.classList.remove("selected-row"));
@@ -125,9 +139,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function updateStatistics(records) {
-        const critical = records.filter(r => r.priority === "Critical").length;
-        const incoming = records.filter(r => ["REQUESTED", "ASSIGNED", "EN_ROUTE"].includes(r.status)).length;
-        const arrived = records.filter(r => ["ARRIVED", "TRIAGED"].includes(r.status)).length;
+        const critical = records.filter(r => String(r.priority).toUpperCase() === "CRITICAL").length;
+        const incoming = records.filter(r => ["HOSPITAL_SELECTED", "HOSPITAL_ACCEPTED"].includes(r.status)).length;
+        const arrived = records.filter(r => ["HOSPITAL_ARRIVED", "HOSPITAL_RECEIVED"].includes(r.status)).length;
 
         setFieldText("emergencyStatCritical", critical);
         setFieldText("emergencyStatIncoming", incoming);
@@ -136,15 +150,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         setFieldText("emergencyBadge", incoming);
     }
 
-    async function updateStatus(newStatus) {
+    function updateActionAvailability(status) {
+        if (markArrivedBtn) markArrivedBtn.disabled = status !== "HOSPITAL_SELECTED";
+        if (markReceivedBtn) markReceivedBtn.disabled = status !== "HOSPITAL_ARRIVED";
+        if (markResolvedBtn) markResolvedBtn.disabled = status !== "HOSPITAL_RECEIVED";
+    }
+
+    async function updateStatus(newStatus, button) {
         if (!selectedEmergency) {
-            alert("Please select an emergency arrival from the table first.");
+            if (actionMessage) actionMessage.textContent = "Select an incoming emergency first.";
             return;
         }
 
         const api = window.MedraAPI;
         if (!api) return;
 
+        if (button) button.disabled = true;
         try {
             if (actionMessage) actionMessage.textContent = `Saving status to PostgreSQL...`;
             const resp = await api.patch(`/api/hospital/emergencies/${selectedEmergency.id}/status`, {
@@ -156,7 +177,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             setFieldText("selectedEmergencyStatus", resp.status);
 
             if (actionMessage) {
-                actionMessage.textContent = `✓ Arrival marked as ${newStatus} in database.`;
+                actionMessage.textContent = `Emergency status saved as ${newStatus}.`;
                 actionMessage.style.color = "#047857";
             }
 
@@ -172,11 +193,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 actionMessage.textContent = `Error: ${err.message}`;
                 actionMessage.style.color = "#b91c1c";
             }
+        } finally {
+            if (selectedEmergency) updateActionAvailability(selectedEmergency.status);
         }
     }
 
-    if (markArrivedBtn) markArrivedBtn.addEventListener("click", () => updateStatus("ARRIVED"));
-    if (markReceivedBtn) markReceivedBtn.addEventListener("click", () => updateStatus("TRIAGED"));
+    if (markArrivedBtn) markArrivedBtn.addEventListener("click", () => updateStatus("HOSPITAL_ACCEPTED", markArrivedBtn));
+    if (markReceivedBtn) markReceivedBtn.addEventListener("click", () => updateStatus("HOSPITAL_RECEIVED", markReceivedBtn));
+    if (markResolvedBtn) markResolvedBtn.addEventListener("click", () => updateStatus("RESOLVED", markResolvedBtn));
 
     if (searchInput) searchInput.addEventListener("input", applyFilters);
     if (priorityFilter) priorityFilter.addEventListener("change", applyFilters);
@@ -196,7 +220,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             refreshButton.disabled = true;
             await loadEmergencies();
             refreshButton.disabled = false;
-            if (typeof showNotification === "function") {
+            if (typeof showNotification === "function" && loadedEmergencies.length) {
                 showNotification("Emergency arrivals queue refreshed", "info");
             }
         });
@@ -210,4 +234,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     await loadEmergencies();
+    window.setInterval(loadEmergencies, 10000);
 });
+
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[character]);
+}

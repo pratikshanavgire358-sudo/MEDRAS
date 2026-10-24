@@ -102,6 +102,17 @@
             <!-- Left Column: Active Assignment & Workflow -->
             <div class="col-lg-7">
 
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">Pending Emergency Requests</h5>
+                        <span class="small text-muted">Live queue</span>
+                    </div>
+                    <div class="card-body" id="pendingEmergencyList" aria-live="polite">
+                        <div class="text-center text-muted py-3">Loading pending emergencies...</div>
+                    </div>
+                    <div class="card-footer bg-white small" id="ambulanceWorkflowMessage" role="status" aria-live="polite"></div>
+                </div>
+
                 <!-- Active Mission Card -->
                 <div class="card shadow-sm border-0 mb-4" id="missionCard">
                     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
@@ -116,40 +127,45 @@
                         <div id="noMissionPrompt" class="text-center py-5 text-muted">
                             <i class="bi bi-shield-check display-4 text-success mb-3 d-block"></i>
                             <h5>Standing by for Emergency Dispatch</h5>
-                            <p class="small">Ambulance unit is linked to Solapur Trauma Network. New patient SOS requests will automatically assign here.</p>
+                            <p class="small">Pending patient SOS requests stay in the queue until your crew accepts one.</p>
                         </div>
 
                         <div id="activeMissionDetails" style="display:none;">
                             <div class="d-flex justify-content-between mb-3">
                                 <div>
                                     <span class="text-muted small">EMERGENCY REFERENCE</span>
-                                    <h4 class="text-danger fw-bold mb-0" id="missionReference">MEDRA-EMG-0001</h4>
+                                    <h4 class="text-danger fw-bold mb-0" id="missionReference">-</h4>
                                 </div>
                                 <div class="text-end">
                                     <span class="text-muted small">CALLER CONTACT</span>
-                                    <div class="fw-bold" id="missionPatientName">Rajesh Sharma</div>
-                                    <small class="text-muted" id="missionPatientPhone">9876543210</small>
+                                    <div class="fw-bold" id="missionPatientName">-</div>
+                                    <small class="text-muted" id="missionPatientPhone">-</small>
                                 </div>
                             </div>
 
                             <div class="p-3 bg-light rounded mb-3">
                                 <strong>Condition / Report:</strong>
-                                <p class="mb-0 text-secondary" id="missionDescription">Severe Cardiac Chest Pain. Dispatch immediately.</p>
+                                <p class="mb-0 text-secondary" id="missionDescription">-</p>
                             </div>
 
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
                                     <div class="border rounded p-3 h-100">
                                         <div class="text-muted small mb-1"><i class="bi bi-geo-alt-fill text-danger"></i> PICKUP LOCATION</div>
-                                        <strong id="missionPickupCoords">17.659900, 75.906400</strong>
-                                        <div class="small text-muted mt-1">Patient Home / Emergency Scene</div>
+                                        <strong id="missionPickupCoords">Location unavailable</strong>
+                                        <div class="small text-muted mt-1" id="missionPickupMapLink"></div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="border rounded p-3 h-100">
                                         <div class="text-muted small mb-1"><i class="bi bi-hospital-fill text-primary"></i> DESTINATION HOSPITAL</div>
-                                        <strong id="missionHospitalName">Solapur District Medical Center</strong>
-                                        <div class="small text-muted mt-1" id="missionHospitalAddress">Near Civil Court, Solapur</div>
+                                        <strong id="missionHospitalName">Not selected</strong>
+                                        <div class="small text-muted mt-1" id="missionHospitalAddress"></div>
+                                        <label class="small mt-2" for="missionHospitalSelect">Select available hospital</label>
+                                        <select id="missionHospitalSelect" class="form-select form-select-sm mt-1" disabled>
+                                            <option value="">Loading hospitals...</option>
+                                        </select>
+                                        <div class="small mt-1" id="missionHospitalSelectionMessage" role="status"></div>
                                     </div>
                                 </div>
                             </div>
@@ -157,20 +173,17 @@
                             <!-- Workflow Stage Buttons -->
                             <label class="fw-bold text-muted small text-uppercase mb-2">Advance Mission Progress (Saves to PostgreSQL):</label>
                             <div class="mission-stepper">
-                                <button type="button" class="mission-step-btn" data-status="ACCEPTED">
-                                    1. Accept Call
-                                </button>
                                 <button type="button" class="mission-step-btn" data-status="EN_ROUTE">
-                                    2. En Route to Patient
+                                    1. En Route to Patient
                                 </button>
                                 <button type="button" class="mission-step-btn" data-status="PATIENT_PICKED_UP">
-                                    3. Patient Picked Up
+                                    2. Patient Picked Up
                                 </button>
                                 <button type="button" class="mission-step-btn" data-status="HOSPITAL_ARRIVED">
-                                    4. Hospital Arrival
+                                    3. Hospital Arrival
                                 </button>
-                                <button type="button" class="mission-step-btn btn-success" data-status="COMPLETED" style="background:#06b878; color:#fff;">
-                                    ✓ 5. Complete Mission
+                                <button type="button" class="mission-step-btn btn-success" data-status="RESOLVED" style="background:#06b878; color:#fff;">
+                                    ✓ 4. Resolve Mission
                                 </button>
                             </div>
                         </div>
@@ -211,11 +224,15 @@
                     </div>
                     <div class="card-body p-3">
                         <div id="ambulanceMap"></div>
+                        <div class="small text-muted mt-2" id="ambulanceLocationStatus" role="status">
+                            Ambulance GPS is shared only during an active mission.
+                        </div>
                         <div class="mt-3 d-flex justify-content-between small text-muted">
                             <span><span style="color:#06b878;">●</span> Ambulance</span>
                             <span><span style="color:#ef4554;">●</span> Patient Pickup</span>
                             <span><span style="color:#00a8c8;">●</span> Hospital Destination</span>
                         </div>
+                        <div class="small text-muted mt-2">Map lines show approximate straight-line points, not road navigation.</div>
                     </div>
                 </div>
 
