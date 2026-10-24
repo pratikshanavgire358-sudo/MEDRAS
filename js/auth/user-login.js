@@ -70,47 +70,30 @@ function setLoading(isLoading) {
 
 
 /*
- * Ask FastAPI to verify the Firebase ID token
- * and authorize access to the patient dashboard.
+ * Exchange Firebase's verified identity for the MEDRA JWT used by protected APIs.
  */
 
 async function verifyBackendAccess(user) {
+    const api = window.MedraAPI;
 
-    const token = await user.getIdToken();
-
-    const response = await fetch(
-        "http://127.0.0.1:8000/api/auth/me",
-        {
-            method: "GET",
-
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
-        }
-    );
-
-    if (!response.ok) {
-
-        if (response.status === 401) {
-            throw new Error(
-                "Your account could not be verified by MEDRA."
-            );
-        }
-
-        if (response.status === 403) {
-            throw new Error(
-                "Your account does not have permission to access the user dashboard."
-            );
-        }
-
-        throw new Error(
-            "MEDRA could not verify your account. Please try again."
-        );
-
+    if (
+        !api ||
+        typeof api.post !== "function" ||
+        typeof api.setAuthSession !== "function"
+    ) {
+        throw new Error("MEDRA API client is unavailable. Please reload and try again.");
     }
 
-    return response.json();
+    const firebaseIdToken = await user.getIdToken();
+    const result = await api.post("/api/auth/firebase", {
+        firebase_id_token: firebaseIdToken
+    });
 
+    if (!result?.access_token || !result?.user) {
+        throw new Error("MEDRA returned an incomplete login response.");
+    }
+
+    return result;
 }
 
 
@@ -120,7 +103,8 @@ async function completeLogin(user) {
 
     showMessage("Verifying your MEDRA account...", "success");
 
-    const profile = await verifyBackendAccess(user);
+    const result = await verifyBackendAccess(user);
+    const profile = result.user;
 
     /*
      * Backend must return an authorized profile.
@@ -129,14 +113,15 @@ async function completeLogin(user) {
 
     const role = profile.role;
 
-    if (role !== "patient" && role !== "user") {
+    if (role !== "patient" && role !== "admin") {
 
         throw new Error(
-            "This account is not authorized for the user dashboard."
+            "This account is not authorized for the patient dashboard."
         );
 
     }
 
+    window.MedraAPI.setAuthSession(result.access_token, profile);
     sessionStorage.setItem("medraAuthenticated", "true");
     sessionStorage.setItem("medraRole", role);
 

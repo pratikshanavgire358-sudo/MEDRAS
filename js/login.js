@@ -6,8 +6,6 @@
    Authentication: JWT
    ========================================================= */
 
-const MEDRA_API_URL = "http://127.0.0.1:8000/api/auth/login";
-
 /* =========================================================
    Initialize Login
    ========================================================= */
@@ -55,36 +53,25 @@ async function handleLogin(event) {
     }
 
     try {
-        const response = await fetch(
-            "http://127.0.0.1:8000/api/auth/login",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({
-                    email: email,
-                    password: password
-                })
-            }
-        );
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(
-                result.detail || "Login failed. Please check your credentials."
-            );
+        if (
+            !window.MedraAPI ||
+            typeof window.MedraAPI.post !== "function" ||
+            typeof window.MedraAPI.setAuthSession !== "function"
+        ) {
+            throw new Error("MEDRA API client is unavailable. Check that js/api.js is loaded.");
         }
+
+        const result = await window.MedraAPI.post(
+            "/api/auth/login",
+            { email, password }
+        );
 
         if (!result.access_token || !result.user) {
             throw new Error("Login response is missing the token or user details.");
         }
 
         // Save the authenticated session
-        sessionStorage.setItem("medra_access_token", result.access_token);
-        sessionStorage.setItem("medra_user", JSON.stringify(result.user));
+        window.MedraAPI.setAuthSession(result.access_token, result.user);
         sessionStorage.setItem("medraAuthenticated", "true");
         sessionStorage.setItem(
             "medraRole",
@@ -129,128 +116,6 @@ async function handleLogin(event) {
         if (loginButton) {
             loginButton.disabled = false;
             loginButton.textContent = "Login";
-        }
-    }
-}
-
-    try {
-        showLoginMessage("Connecting to MEDRA...", "info");
-
-        const response = await fetch(MEDRA_API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
-        });
-
-        // Safely read the response.
-        const result = await response.json().catch(() => ({}));
-
-        // Handle authentication errors.
-        if (!response.ok) {
-            let errorMessage = "Login failed. Please try again.";
-
-            if (typeof result.detail === "string") {
-                errorMessage = result.detail;
-            } else if (Array.isArray(result.detail)) {
-                errorMessage = result.detail
-                    .map(item => item.msg)
-                    .join(", ");
-            }
-
-            throw new Error(errorMessage);
-        }
-
-        // Validate the backend response.
-        if (
-            typeof result.access_token !== "string" ||
-            !result.access_token ||
-            !result.user
-        ) {
-            throw new Error(
-                "The backend did not return a valid login token and user."
-            );
-        }
-
-        // Save the login session in the current tab.
-        sessionStorage.setItem(
-            "medra_access_token",
-            result.access_token
-        );
-
-        sessionStorage.setItem(
-            "medra_user",
-            JSON.stringify(result.user)
-        );
-
-        sessionStorage.setItem(
-            "medraAuthenticated",
-            "true"
-        );
-
-        const role = String(
-            result.user.role || ""
-        ).toLowerCase();
-
-        sessionStorage.setItem("medraRole", role);
-
-        // Verify that the token was stored.
-        const savedToken = sessionStorage.getItem(
-            "medra_access_token"
-        );
-
-        if (savedToken !== result.access_token) {
-            throw new Error(
-                "The login token could not be saved in browser storage."
-            );
-        }
-
-        console.log("MEDRA login successful.");
-        console.log("Token saved:", Boolean(savedToken));
-        console.log("User role:", role);
-
-        showLoginMessage(
-            "Login successful! Welcome to MEDRA.",
-            "success"
-        );
-
-        if (loginButton) {
-            loginButton.textContent = "Login Successful";
-        }
-
-        /*
-         * Dashboard navigation is intentionally not hard-coded here.
-         * Add the actual dashboard path after confirming your
-         * project's folder structure.
-         */
-
-    } catch (error) {
-        console.error("MEDRA login error:", error);
-
-        let message = error.message;
-
-        if (error instanceof TypeError) {
-            message =
-                "Cannot connect to MEDRA. Check that FastAPI is running " +
-                "and that the frontend can reach the backend.";
-        }
-
-        showLoginMessage(message, "danger");
-
-    } finally {
-        if (loginButton) {
-            loginButton.disabled = false;
-
-            if (
-                loginButton.textContent !== "Login Successful"
-            ) {
-                loginButton.textContent = "Sign In";
-            }
         }
     }
 }

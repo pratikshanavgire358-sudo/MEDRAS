@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from uuid import UUID
+from pydantic import BaseModel, Field, model_validator
 
 
 class EmergencyCreateRequest(BaseModel):
@@ -8,9 +9,25 @@ class EmergencyCreateRequest(BaseModel):
     description: Optional[str] = Field(default="", max_length=1000)
     latitude: Optional[float] = Field(default=None, ge=-90.0, le=90.0)
     longitude: Optional[float] = Field(default=None, ge=-180.0, le=180.0)
+    idempotency_key: Optional[UUID] = None
+
+    @model_validator(mode="after")
+    def validate_text(self):
+        self.emergency_type = self.emergency_type.strip()
+        if not self.emergency_type:
+            raise ValueError("Emergency type cannot be blank")
+        self.description = (self.description or "").strip()
+        return self
+
+    @model_validator(mode="after")
+    def validate_coordinate_pair(self):
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError("Latitude and longitude must be provided together")
+        return self
 
 
 class VitalObservationCreate(BaseModel):
+    emergency_id: Optional[int] = Field(default=None, gt=0)
     heart_rate: Optional[int] = Field(default=None, ge=30, le=250)
     blood_pressure_systolic: Optional[int] = Field(default=None, ge=50, le=250)
     blood_pressure_diastolic: Optional[int] = Field(default=None, ge=30, le=150)

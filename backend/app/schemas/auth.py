@@ -15,6 +15,10 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class FirebaseLoginRequest(BaseModel):
+    firebase_id_token: str = Field(min_length=1)
+
+
 class UserProfileResponse(BaseModel):
     id: int
     full_name: str

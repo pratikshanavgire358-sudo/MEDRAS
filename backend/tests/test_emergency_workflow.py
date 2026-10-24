@@ -1,5 +1,6 @@
 import unittest
 import asyncio
+from unittest.mock import patch
 
 from fastapi import FastAPI
 import httpx
@@ -14,7 +15,7 @@ from app.models.patient_profile import PatientProfile
 from app.models.system import AuditLog, Notification
 from app.models.vitals import VitalObservation
 from app.models.hospital import HospitalPatient, HospitalResource
-from app.routes.auth import create_access_token
+from app.routes.auth import create_access_token, router as auth_router
 from app.routes.patient import router as patient_router
 from app.routes.ambulance import router as ambulance_router
 from app.routes.admin import router as admin_router
@@ -28,6 +29,7 @@ test_engine = create_engine(
 )
 TestSession = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
 app = FastAPI()
+app.include_router(auth_router)
 app.include_router(patient_router)
 app.include_router(ambulance_router)
 app.include_router(admin_router)
@@ -167,6 +169,76 @@ class TestEmergencyWorkflow(unittest.TestCase):
         self.assertEqual(retry.status_code, 201)
         self.assertEqual(retry.json()["emergency_id"], payload["emergency_id"])
         self.assertEqual(self.db.query(Emergency).count(), 1)
+
+    def test_sos_requires_patient_authorization(self):
+        payload = {"emergency_type": "Medical emergency", "description": "Test"}
+
+        unauthenticated = client.post("/api/patient/emergency", json=payload)
+        self.assertEqual(unauthenticated.status_code, 401)
+
+        wrong_role = client.post(
+            "/api/patient/emergency",
+            headers=self.driver_headers,
+            json=payload,
+        )
+        self.assertEqual(wrong_role.status_code, 403)
+        self.assertEqual(self.db.query(Emergency).count(), 0)
+
+    def test_sos_rejects_unpaired_coordinates(self):
+        response = client.post(
+            "/api/patient/emergency",
+            headers=self.patient_headers,
+            json={
+                "emergency_type": "Medical emergency",
+                "description": "Test",
+                "latitude": 17.2,
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(self.db.query(Emergency).count(), 0)
+
+    def test_firebase_login_exchanges_verified_identity_for_medra_jwt(self):
+        claims = {
+            "uid": "firebase-patient-uid",
+            "email": self.patient.email,
+            "email_verified": True,
+        }
+
+        with patch("app.routes.auth.verify_firebase_id_token", return_value=claims):
+            response = client.post(
+                "/api/auth/firebase",
+                json={"firebase_id_token": "test-firebase-token"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["token_type"], "bearer")
+        self.assertEqual(payload["user"]["id"], self.patient.id)
+        self.db.refresh(self.patient)
+        self.assertEqual(self.patient.firebase_uid, claims["uid"])
+
+        protected = client.get(
+            "/api/patient/emergencies",
+            headers={"Authorization": f"Bearer {payload['access_token']}"},
+        )
+        self.assertEqual(protected.status_code, 200)
+
+    def test_firebase_login_requires_verified_email_for_account_linking(self):
+        claims = {
+            "uid": "firebase-unverified-uid",
+            "email": self.patient.email,
+            "email_verified": False,
+        }
+
+        with patch("app.routes.auth.verify_firebase_id_token", return_value=claims):
+            response = client.post(
+                "/api/auth/firebase",
+                json={"firebase_id_token": "test-firebase-token"},
+            )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertIsNone(self.patient.firebase_uid)
 
     def test_pending_priority_and_rejection_are_persisted(self):
         response = self.create_sos()

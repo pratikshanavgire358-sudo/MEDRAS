@@ -5,12 +5,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import text
 from pwdlib import PasswordHash
+from firebase_admin import auth as firebase_auth
+from firebase_admin.exceptions import FirebaseError
+from google.auth.exceptions import GoogleAuthError
 
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.patient_profile import PatientProfile
 from app.models.user import User
-from app.schemas.auth import RegisterRequest, LoginRequest
+from app.schemas.auth import RegisterRequest, LoginRequest, FirebaseLoginRequest
 from app.core.dependencies import get_current_user, log_audit
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -35,6 +38,26 @@ def create_access_token(user_id: int, role: str):
     }
 
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def verify_firebase_id_token(id_token: str) -> dict:
+    try:
+        from app.core import firebase as firebase_admin_setup
+
+        app = firebase_admin_setup.firebase_admin.get_app()
+    except (GoogleAuthError, ValueError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Firebase authentication is not configured on the backend",
+        ) from e
+
+    try:
+        return firebase_auth.verify_id_token(id_token, app=app)
+    except (FirebaseError, ValueError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired Firebase login",
+        ) from e
 
 
 @router.get("/health")
@@ -181,8 +204,96 @@ def login_user(
             "full_name": user.full_name,
             "email": user.email,
             "role": user.role,
-            "mobile": user.mobile
+            "mobile": user.mobile,
+            "ambulance_subrole": user.ambulance_subrole,
+            "ambulance_id": user.ambulance_id,
         }
+    }
+
+
+@router.post("/firebase")
+def firebase_login(
+    request: FirebaseLoginRequest,
+    db: Session = Depends(get_db),
+):
+    claims = verify_firebase_id_token(request.firebase_id_token)
+    firebase_uid = claims.get("uid")
+    firebase_email = claims.get("email")
+
+    if not isinstance(firebase_uid, str) or not firebase_uid or not isinstance(firebase_email, str):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Firebase did not provide a valid account identity",
+        )
+
+    email = firebase_email.strip().lower()
+    user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
+
+    if user is None:
+        if claims.get("email_verified") is not True:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Verify your Firebase email before linking it to a MEDRA account",
+            )
+
+        user = db.query(User).filter(User.email == email).first()
+        if user is None or user.firebase_uid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No MEDRA account is available for this Firebase identity",
+            )
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This account is deactivated. Please contact support.",
+            )
+
+        user.firebase_uid = firebase_uid
+        try:
+            db.commit()
+            db.refresh(user)
+        except IntegrityError as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This Firebase identity is already linked to another MEDRA account",
+            ) from e
+
+    if user.email.strip().lower() != email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Firebase email does not match the linked MEDRA account",
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account is deactivated. Please contact support.",
+        )
+
+    token = create_access_token(user.id, user.role)
+    log_audit(
+        db,
+        action="USER_LOGIN",
+        resource_type="User",
+        user=user,
+        resource_id=user.id,
+        details="Firebase authentication",
+    )
+
+    return {
+        "message": "Login successful",
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "role": user.role,
+            "mobile": user.mobile,
+            "ambulance_subrole": user.ambulance_subrole,
+            "ambulance_id": user.ambulance_id,
+        },
     }
 
 
@@ -198,6 +309,8 @@ def get_current_user_profile(
         "mobile": user.mobile,
         "role": user.role,
         "is_active": user.is_active,
+        "ambulance_subrole": user.ambulance_subrole,
+        "ambulance_id": user.ambulance_id,
         "created_at": user.created_at.isoformat() if user.created_at else None
     }
 
