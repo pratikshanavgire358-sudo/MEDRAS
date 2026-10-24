@@ -40,6 +40,13 @@ def create_access_token(user_id: int, role: str):
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
+def auth_role_fields(user: User) -> dict[str, str | int | None]:
+    return {
+        "ambulance_subrole": getattr(user, "ambulance_subrole", None),
+        "ambulance_id": getattr(user, "ambulance_id", None),
+    }
+
+
 def verify_firebase_id_token(id_token: str) -> dict:
     try:
         from app.core import firebase as firebase_admin_setup
@@ -205,8 +212,7 @@ def login_user(
             "email": user.email,
             "role": user.role,
             "mobile": user.mobile,
-            "ambulance_subrole": user.ambulance_subrole,
-            "ambulance_id": user.ambulance_id,
+            **auth_role_fields(user),
         }
     }
 
@@ -291,8 +297,7 @@ def firebase_login(
             "email": user.email,
             "role": user.role,
             "mobile": user.mobile,
-            "ambulance_subrole": user.ambulance_subrole,
-            "ambulance_id": user.ambulance_id,
+            **auth_role_fields(user),
         },
     }
 
@@ -309,8 +314,7 @@ def get_current_user_profile(
         "mobile": user.mobile,
         "role": user.role,
         "is_active": user.is_active,
-        "ambulance_subrole": user.ambulance_subrole,
-        "ambulance_id": user.ambulance_id,
+        **auth_role_fields(user),
         "created_at": user.created_at.isoformat() if user.created_at else None
     }
 
